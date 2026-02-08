@@ -1,0 +1,16 @@
+{
+  "name": "worklynk",
+  "version": "1.0.0",
+  "description": "A Platform for connecting Nepali Clients to Freelancers.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "type": "module",
+    "start": "node index.js"
+  },
+  "author": "Anurodh Prasain",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
