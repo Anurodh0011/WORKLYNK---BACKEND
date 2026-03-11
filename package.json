@@ -7,7 +7,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "type": "module",
-    "start": "node index.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
   },
   "author": "Anurodh Prasain",
   "license": "ISC",
@@ -17,6 +18,7 @@
     "pg": "^8.18.0"
   },
   "devDependencies": {
+    "nodemon": "^3.1.11",
     "prisma": "^7.3.0"
   }
 }
