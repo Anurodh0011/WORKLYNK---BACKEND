@@ -22,6 +22,12 @@ export const registerRules = [
     .withMessage("Please provide a valid email address")
     .normalizeEmail(),
 
+  body("phoneNumber")
+    .optional()
+    .trim()
+    .isMobilePhone()
+    .withMessage("Please provide a valid phone number"),
+
   body("password")
     .notEmpty()
     .withMessage("Password is required")
@@ -64,7 +70,87 @@ export const loginRules = [
     .withMessage("Please provide a valid email address")
     .normalizeEmail(),
 
+  body("phoneNumber")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isMobilePhone()
+    .withMessage("Please provide a valid phone number"),
+
   body("password")
     .notEmpty()
     .withMessage("Password is required"),
+];
+
+/**
+ * Validation rules for forgot password
+ */
+export const forgotPasswordRules = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email address")
+    .normalizeEmail(),
+
+  body("phoneNumber")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isMobilePhone()
+    .withMessage("Please provide a valid phone number"),
+];
+
+/**
+ * Validation rules for verify code
+ */
+export const verifyCodeRules = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email address")
+    .normalizeEmail(),
+
+  body("phoneNumber")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isMobilePhone()
+    .withMessage("Please provide a valid phone number"),
+  body("code")
+    .trim()
+    .notEmpty()
+    .withMessage("Verification code is required")
+    .isLength({ min: 6, max: 6 })
+    .withMessage("Verification code must be 6 digits"),
+];
+
+/**
+ * Validation rules for reset password
+ */
+export const resetPasswordRules = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email address")
+    .normalizeEmail(),
+
+  body("phoneNumber")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isMobilePhone()
+    .withMessage("Please provide a valid phone number"),
+  body("password")
+    .notEmpty()
+    .withMessage("New password is required")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/[A-Z]/)
+    .withMessage("Password must contain at least one uppercase letter")
+    .matches(/[a-z]/)
+    .withMessage("Password must contain at least one lowercase letter")
+    .matches(/\d/)
+    .withMessage("Password must contain at least one number"),
 ];

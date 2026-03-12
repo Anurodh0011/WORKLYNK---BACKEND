@@ -120,3 +120,48 @@ export async function sendWelcomeEmail(to, userName = "User") {
     console.warn("⚠️  Failed to send welcome email:", error.message);
   }
 }
+/**
+ * Send Password Reset OTP email
+ * @param {string} to - recipient email
+ * @param {string} otpCode - the 6-digit OTP
+ * @param {string} userName - user's name
+ */
+export async function sendPasswordResetEmail(to, otpCode, userName = "User") {
+  const mailOptions = {
+    from: env.email.from || `Worklynk <${env.email.address}>`,
+    to,
+    subject: "Worklynk — Password Reset OTP",
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px; background: #fff7ed; border-radius: 12px; border: 1px solid #ffedd5;">
+        <h2 style="color: #9a3412; margin-bottom: 8px;">Reset Your Password</h2>
+        <p style="color: #475569; font-size: 15px;">
+          Hi <strong>${userName}</strong>, we received a request to reset your password. Use the code below to proceed.
+        </p>
+        <div style="background: #9a3412; color: #fff; font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 20px; border-radius: 8px; margin: 24px 0;">
+          ${otpCode}
+        </div>
+        <p style="color: #64748b; font-size: 13px;">
+          This code expires in <strong>15 minutes</strong>. If you didn't request this, please secure your account.
+        </p>
+        <hr style="border: none; border-top: 1px solid #fed7aa; margin: 24px 0;" />
+        <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+          — The Worklynk Security Team
+        </p>
+      </div>
+    `,
+  };
+
+  try {
+    if (env.nodeEnv === "development") {
+      console.log(`\n📧 [DEVELOPMENT] Reset Code for ${to}: ${otpCode}\n`);
+    }
+    await transporter.sendMail(mailOptions);
+    console.log(`📧 Reset email sent to ${to}`);
+  } catch (error) {
+    console.error("❌ Failed to send reset email:", error.message);
+    if (env.nodeEnv === "development") {
+      return { success: true };
+    }
+    throw new Error("Failed to send reset email.");
+  }
+}

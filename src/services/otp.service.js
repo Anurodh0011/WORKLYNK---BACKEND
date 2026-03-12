@@ -56,6 +56,7 @@ export async function verifyOtp(email, code) {
       name: pending.name,
       email: pending.email,
       password: pending.password,
+      phoneNumber: pending.phoneNumber,
       role: pending.role,
       status: "ACTIVE",
     },

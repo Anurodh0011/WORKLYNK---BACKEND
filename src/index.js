@@ -37,10 +37,10 @@ app.get("/", (req, res) => {
 });
 
 // ── API Routes ───────────────────────────────────────────
-app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/admin", adminRouter);
-app.use("/api/v1/client", clientRouter);
-app.use("/api/v1/freelancer", freelancerRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/client", clientRouter);
+app.use("/api/freelancer", freelancerRouter);
 
 // ── 404 Handler ──────────────────────────────────────────
 app.use((req, res) => {

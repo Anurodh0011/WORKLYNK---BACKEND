@@ -11,13 +11,14 @@ import env from "../config/env.js";
  */
 export async function register(req, res, next) {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, phoneNumber } = req.body;
 
     const user = await authService.registerUser({
       name,
       email,
       password,
       role,
+      phoneNumber,
     });
 
     return successResponse(
@@ -113,6 +114,51 @@ export async function getCurrentUser(req, res, next) {
 
     return successResponse(res, "User retrieved successfully", { user });
   } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/v1/auth/forgot-password
+ */
+export async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    const result = await authService.forgotPassword(email);
+    return successResponse(res, result.message);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/v1/auth/verify-code
+ */
+export async function verifyResetCode(req, res, next) {
+  try {
+    const { email, code } = req.body;
+    const result = await authService.verifyResetCode(email, code);
+    return successResponse(res, result.message, result);
+  } catch (error) {
+    if (error.statusCode) {
+      return errorResponse(res, error.message, null, error.statusCode);
+    }
+    next(error);
+  }
+}
+
+/**
+ * POST /api/v1/auth/reset-password
+ */
+export async function resetPassword(req, res, next) {
+  try {
+    const { email, password } = req.body;
+    const result = await authService.resetPassword(email, password);
+    return successResponse(res, result.message);
+  } catch (error) {
+    if (error.statusCode) {
+      return errorResponse(res, error.message, null, error.statusCode);
+    }
     next(error);
   }
 }

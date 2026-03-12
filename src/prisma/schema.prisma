@@ -31,6 +31,7 @@ model User {
   name          String
   email         String        @unique
   password      String
+  phoneNumber   String?
   role          UserRole      @default(FREELANCER)
   status        AccountStatus @default(ACTIVE)
   lastLoginAt   DateTime?
@@ -49,6 +50,7 @@ model PendingUser {
   name      String
   email     String   @unique
   password  String
+  phoneNumber String?
   role      UserRole @default(CLIENT)
   otpCode   String   // Hashed OTP
   expiresAt DateTime
@@ -73,4 +75,16 @@ model Session {
   @@index([token])
   @@index([userId])
   @@map("sessions")
+}
+// ─── Password Reset Model ────────────────────────────────
+model PasswordReset {
+  id        String   @id @default(uuid())
+  email     String
+  code      String   // Hashed code
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("password_resets")
 }

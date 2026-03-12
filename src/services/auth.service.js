@@ -7,14 +7,14 @@ import prisma from "../prisma/client.js";
 import env from "../config/env.js";
 import { hashPassword, comparePassword } from "../helpers/password.helper.js";
 import { generateOtp, getOtpExpiry } from "../helpers/otp.helper.js";
-import { sendOtpEmail } from "./email.service.js";
+import { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail } from "./email.service.js";
 
 /**
  * Stage a new user for registration (saves to PendingUser)
- * @param {{ name: string, email: string, password: string, role?: string }} data
+ * @param {{ name: string, email: string, password: string, role?: string, phoneNumber?: string }} data
  * @returns {Promise<object>} pending user data (without password/otp)
  */
-export async function registerUser({ name, email, password, role = "CLIENT" }) {
+export async function registerUser({ name, email, password, role = "CLIENT", phoneNumber }) {
   const normalizedEmail = email.toLowerCase().trim();
 
   // 1. Check if user already exists in main table
@@ -45,6 +45,7 @@ export async function registerUser({ name, email, password, role = "CLIENT" }) {
       name,
       password: hashedPassword,
       role: normalizedRole,
+      phoneNumber,
       otpCode: hashedOtp,
       expiresAt: getOtpExpiry(env.otpExpiryMinutes),
       attempts: 0,
@@ -54,6 +55,7 @@ export async function registerUser({ name, email, password, role = "CLIENT" }) {
       email: normalizedEmail,
       password: hashedPassword,
       role: normalizedRole,
+      phoneNumber,
       otpCode: hashedOtp,
       expiresAt: getOtpExpiry(env.otpExpiryMinutes),
     },
@@ -186,4 +188,108 @@ export async function getUserById(userId) {
 
 export async function cleanExpiredSessions() {
   await prisma.session.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+}
+
+/**
+ * Initiate password reset process
+ * @param {string} email
+ */
+export async function forgotPassword(email) {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // 1. Check if user exists
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (!user) {
+    // For security, don't reveal if user exists. Just say "If an account exists..."
+    return { message: "If an account exists with this email, a reset code has been sent." };
+  }
+
+  // 2. Generate reset code (6 digits)
+  const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const hashedCode = await hashPassword(resetCode);
+
+  // 3. Cleanup old unverified requests and Save new one
+  await prisma.$transaction([
+    prisma.passwordReset.deleteMany({ where: { email: normalizedEmail, verified: false } }),
+    prisma.passwordReset.create({
+      data: {
+        email: normalizedEmail,
+        code: hashedCode,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      }
+    })
+  ]);
+
+  // 4. Send email
+  sendPasswordResetEmail(normalizedEmail, resetCode, user.name).catch(err => console.error("Email send error:", err));
+
+  return { message: "If an account exists with this email, a reset code has been sent." };
+}
+
+/**
+ * Verify the reset code sent to email
+ */
+export async function verifyResetCode(email, code) {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const resetRequest = await prisma.passwordReset.findFirst({
+    where: {
+      email: normalizedEmail,
+      expiresAt: { gt: new Date() },
+      verified: false,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!resetRequest) {
+    throw Object.assign(new Error("Invalid or expired reset code"), { statusCode: 400 });
+  }
+
+  const isValid = await comparePassword(code, resetRequest.code);
+  if (!isValid) {
+    throw Object.assign(new Error("Invalid or expired reset code"), { statusCode: 400 });
+  }
+
+  // Mark as verified
+  await prisma.passwordReset.update({
+    where: { id: resetRequest.id },
+    data: { verified: true },
+  });
+
+  return { email: normalizedEmail, message: "Code verified successfully" };
+}
+
+/**
+ * Reset password using verified code
+ */
+export async function resetPassword(email, newPassword) {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // 1. Check if the code was verified recently (within last 15 mins)
+  const verifiedRequest = await prisma.passwordReset.findFirst({
+    where: {
+      email: normalizedEmail,
+      verified: true,
+      createdAt: { gt: new Date(Date.now() - 30 * 60 * 1000) }, // 30 mins window total
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!verifiedRequest) {
+    throw Object.assign(new Error("Reset session expired or not found"), { statusCode: 403 });
+  }
+
+  // 2. Hash new password
+  const hashedPassword = await hashPassword(newPassword);
+
+  // 3. Update user password
+  await prisma.user.update({
+    where: { email: normalizedEmail },
+    data: { password: hashedPassword },
+  });
+
+  // 4. Cleanup: invalidate reset sessions for this email
+  await prisma.passwordReset.deleteMany({ where: { email: normalizedEmail } });
+
+  return { message: "Password reset successful" };
 }
