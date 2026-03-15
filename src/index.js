@@ -1,33 +1,76 @@
-import express from "express";
-import dotenv from "dotenv";
-import "./database.js";
+// ─── Worklynk Backend Server ─────────────────────────────
+// Express 5 + Prisma + PostgreSQL with session-based auth
 
-dotenv.config();
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import env from "./config/env.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { verifyEmailConnection } from "./services/email.service.js";
+import { cleanExpiredSessions } from "./services/auth.service.js";
+
+// ── Import Routes ────────────────────────────────────────
+import authRouter from "./routes/auth.routes.js";
+import adminRouter from "./routes/admin.routes.js";
+import clientRouter from "./routes/client.routes.js";
+import freelancerRouter from "./routes/freelancer.routes.js";
 
 const app = express();
-const PORT = process.env.PORT || 5001;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ── Core Middleware ──────────────────────────────────────
+app.use(cors({
+  origin: env.clientUrl,
+  credentials: true,
+}));
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(cookieParser());
 
+// ── Health Check ─────────────────────────────────────────
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "🚀 Express server running with ES Modules",
+    message: "🚀 Worklynk API is running",
+    version: "1.0.0",
+    timestamp: new Date().toISOString(),
   });
 });
 
-app.get("/login", (req, res) => {
-  res.status(200).send("OK");
-});
+// ── API Routes ───────────────────────────────────────────
+app.use("/api/auth", authRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/client", clientRouter);
+app.use("/api/freelancer", freelancerRouter);
 
+// ── 404 Handler ──────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: "Route not found",
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+// ── Error Handler (must be last) ─────────────────────────
+app.use(errorHandler);
+
+// ── Start Server ─────────────────────────────────────────
+const PORT = env.port;
+
+app.listen(PORT, async () => {
+  console.log(`\n╔══════════════════════════════════════════╗`);
+  console.log(`║   🚀 Worklynk API Server                 ║`);
+  console.log(`║   Port: ${PORT}                             ║`);
+  console.log(`║   Mode: ${env.nodeEnv.padEnd(30)}║`);
+  console.log(`╚══════════════════════════════════════════╝\n`);
+
+  // Verify email service connection
+  await verifyEmailConnection();
+
+  // Clean up expired sessions on startup
+  await cleanExpiredSessions();
+
+  // Schedule periodic session cleanup (every 30 minutes)
+  setInterval(cleanExpiredSessions, 30 * 60 * 1000);
 });
+
+export default app;
