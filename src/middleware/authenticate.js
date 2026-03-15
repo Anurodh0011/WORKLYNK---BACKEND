@@ -24,7 +24,7 @@ export function authenticate(req, res, next) {
   validateSession(sessionToken)
     .then((user) => {
       if (!user) {
-        return errorResponse(res, "Session expired or invalid. Please log in again.", null, 401);
+        return errorResponse(res, "Session expired or invalid. Please log in again. ", null, 401);
       }
 
       // Attach user and token to request

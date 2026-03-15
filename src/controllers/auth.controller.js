@@ -7,7 +7,7 @@ import env from "../config/env.js";
 
 /**
  * POST /api/v1/auth/register
- * Register a new user account
+ * Register a new user account 
  */
 export async function register(req, res, next) {
   try {

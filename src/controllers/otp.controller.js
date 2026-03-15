@@ -6,7 +6,7 @@ import { successResponse, errorResponse } from "../helpers/response.helper.js";
 
 /**
  * POST /api/v1/auth/otp/verify
- * Verify the OTP code and complete user creation
+ * Verify the OTP code and complete user creation 
  */
 export async function verifyOtp(req, res, next) {
   try {

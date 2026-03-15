@@ -10,7 +10,7 @@ import crypto from "crypto";
 export function generateOtp() {
   // Generate a random number between 100000 and 999999
   const otp = crypto.randomInt(100000, 999999);
-  return otp.toString();
+  return otp.toString(); 
 }
 
 /**
