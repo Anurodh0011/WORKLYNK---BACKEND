@@ -59,11 +59,18 @@ export async function updateProject(projectId, clientId, updateData) {
   // Ensure the project belongs to the client
   const project = await prisma.project.findUnique({
     where: { id: projectId },
+    include: { _count: { select: { applications: true } } }
   });
 
   if (!project) {
     const error = new Error("Project not found");
     error.statusCode = 404;
+    throw error;
+  }
+
+  if (project._count.applications > 0) {
+    const error = new Error("Cannot edit project after freelancers have applied.");
+    error.statusCode = 400;
     throw error;
   }
 

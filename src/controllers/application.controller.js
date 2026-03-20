@@ -23,9 +23,11 @@ export const apply = async (req, res) => {
       attachments
     });
 
+    const isDraft = application.status === "DRAFT";
+
     res.status(201).json({
       success: true,
-      message: "Application submitted successfully",
+      message: isDraft ? "Application saved as draft" : "Application submitted successfully",
       data: application,
     });
   } catch (error) {

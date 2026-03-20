@@ -1,6 +1,8 @@
 import prisma from "../prisma/client.js";
 
 export const applyForProject = async (projectId, freelancerId, data) => {
+  const status = data.status || "PENDING";
+  
   // Check if project exists and is OPEN
   const project = await prisma.project.findUnique({
     where: { id: projectId },
@@ -10,7 +12,7 @@ export const applyForProject = async (projectId, freelancerId, data) => {
     throw new Error("Project not found");
   }
 
-  if (project.status !== "OPEN") {
+  if (project.status !== "OPEN" && status !== "DRAFT") {
     throw new Error("This project is no longer accepting applications");
   }
 
@@ -19,29 +21,41 @@ export const applyForProject = async (projectId, freelancerId, data) => {
     throw new Error("You cannot apply to your own project");
   }
 
-  // Check if already applied
-  const existingApplication = await prisma.application.findFirst({
+  // Check if already applied (including drafts)
+  const existingApplication = await prisma.application.findUnique({
     where: {
-      projectId,
-      freelancerId,
+      projectId_freelancerId: {
+        projectId,
+        freelancerId,
+      },
     },
   });
 
-  if (existingApplication) {
-    throw new Error("You have already applied for this project");
+  if (existingApplication && existingApplication.status !== "DRAFT") {
+    throw new Error("You have already submitted an application for this project");
   }
 
-  // Create application
+  const applicationData = {
+    projectId,
+    freelancerId,
+    bidAmount: data.bidAmount ? parseFloat(data.bidAmount) : 0,
+    proposal: data.proposal || "",
+    estimatedDuration: data.estimatedDays?.toString() || "",
+    attachments: data.attachments || [],
+    status: status,
+  };
+
+  if (existingApplication) {
+    // Update existing draft
+    return await prisma.application.update({
+      where: { id: existingApplication.id },
+      data: applicationData,
+    });
+  }
+
+  // Create new application/draft
   return await prisma.application.create({
-    data: {
-      projectId,
-      freelancerId,
-      bidAmount: parseFloat(data.bidAmount),
-      proposal: data.proposal,
-      estimatedDays: parseInt(data.estimatedDays),
-      attachments: data.attachments || [],
-      status: "PENDING",
-    },
+    data: applicationData,
   });
 };
 

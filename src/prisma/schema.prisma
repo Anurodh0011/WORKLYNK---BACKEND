@@ -55,6 +55,7 @@ enum ExperienceLevel {
 }
 
 enum ApplicationStatus {
+  DRAFT
   PENDING
   SHORTLISTED
   REJECTED
