@@ -1,6 +1,3 @@
-// ─── Response Helper ─────────────────────────────────────
-// Standardized API response builders
-
 /**
  * Build a success response object
  * @param {string} message
@@ -17,7 +14,7 @@ export function successResponse(res, message, data = null, statusCode = 200) {
 }
 
 /**
- * Build an error response object 
+ * Build an error response object
  * @param {string} message
  * @param {any} errors
  * @param {number} statusCode

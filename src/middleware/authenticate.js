@@ -1,6 +1,3 @@
-// ─── Authentication Middleware ───────────────────────────
-// Validates session token from cookie or Authorization header
-
 import { validateSession } from "../services/auth.service.js";
 import { errorResponse } from "../helpers/response.helper.js";
 

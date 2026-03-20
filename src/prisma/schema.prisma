@@ -23,6 +23,18 @@ enum AccountStatus {
   DEACTIVATED
 }
 
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DocumentType {
+  PAN
+  VAT
+}
+
 // ─── User Model ──────────────────────────────────────────
 // Only verified users are stored here
 model User {
@@ -38,6 +50,7 @@ model User {
   updatedAt     DateTime      @updatedAt
 
   sessions      Session[]
+  profile       Profile?
 
   @@map("users")
 }
@@ -86,4 +99,34 @@ model PasswordReset {
 
   @@index([email])
   @@map("password_resets")
+}
+
+// ─── Profile Model ───────────────────────────────────────
+// Stores user profile, bio, and verification details (PAN/VAT)
+model Profile {
+  id              String             @id @default(uuid())
+  userId          String             @unique
+  profilePicture  String?
+  description     String?
+  panVatNumber    String?
+  documentType    DocumentType?      // newly added: PAN or VAT
+  documentImage   String?            // URL/path to PAN/VAT document image
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  rejectionReason String?
+
+  // Freelancer specific fields
+  headline        String?
+  skills          String[]
+  education       Json?
+  experience      Json?
+  portfolio       Json?
+  certifications  Json?
+  hourlyRate      Float?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
 }

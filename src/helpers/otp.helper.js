@@ -1,6 +1,3 @@
-// ─── OTP Helper ──────────────────────────────────────────
-// Secure random OTP generation
-
 import crypto from "crypto";
 
 /**
