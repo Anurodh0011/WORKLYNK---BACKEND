@@ -1,0 +1,43 @@
+import express from "express";
+import * as applicationController from "../controllers/application.controller.js";
+import { authenticate, authorize } from "../middleware/auth.js";
+import { createApplicationValidator, updateApplicationStatusValidator } from "../validators/application.validator.js";
+import upload from "../middleware/multer.js";
+
+const router = express.Router();
+
+// Apply for a project (FREELANCER only)
+router.post(
+  "/:projectId/apply",
+  authenticate,
+  authorize("FREELANCER"),
+  upload.array("attachments", 5),
+  createApplicationValidator,
+  applicationController.apply
+);
+
+// Get applications for a project (CLIENT who owns the project)
+router.get(
+  "/project/:projectId",
+  authenticate,
+  authorize("CLIENT"),
+  applicationController.getProjectApplications
+);
+
+// Get freelancer's own applications
+router.get(
+  "/my-applications",
+  authenticate,
+  authorize("FREELANCER"),
+  applicationController.getMyApplications
+);
+
+// Update application status (Accept/Reject/Withdraw)
+router.patch(
+  "/:id/status",
+  authenticate,
+  updateApplicationStatusValidator,
+  applicationController.updateStatus
+);
+
+export default router;

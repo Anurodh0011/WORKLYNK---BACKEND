@@ -16,6 +16,7 @@ import clientRouter from "./routes/client.routes.js";
 import freelancerRouter from "./routes/freelancer.routes.js";
 import profileRouter from "./routes/profile.routes.js";
 import projectRouter from "./routes/project.routes.js";
+import applicationRouter from "./routes/application.routes.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/client", clientRouter);
 app.use("/api/freelancer", freelancerRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/projects", projectRouter);
+app.use("/api/applications", applicationRouter);
 
 // ── 404 Handler ──────────────────────────────────────────
 app.use((req, res) => {
