@@ -7,30 +7,50 @@ import prisma from "../prisma/client.js";
 import env from "../config/env.js";
 import { hashPassword, comparePassword } from "../helpers/password.helper.js";
 import { generateOtp, getOtpExpiry } from "../helpers/otp.helper.js";
-import { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail } from "./email.service.js";
+import {
+  sendOtpEmail,
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+} from "./email.service.js";
 
 /**
  * Stage a new user for registration (saves to PendingUser)
  * @param {{ name: string, email: string, password: string, role?: string, phoneNumber?: string }} data
  * @returns {Promise<object>} pending user data (without password/otp)
  */
-export async function registerUser({ name, email, password, role = "CLIENT", phoneNumber }) {
+export async function registerUser({
+  name,
+  email,
+  password,
+  role = "CLIENT",
+  phoneNumber,
+}) {
   const normalizedEmail = email.toLowerCase().trim();
 
   // 1. Check if user already exists in main table
-  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const existingUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
   if (existingUser) {
-    throw Object.assign(new Error("An account with this email already exists"), { statusCode: 409 });
+    throw Object.assign(
+      new Error("An account with this email already exists"),
+      { statusCode: 409 },
+    );
   }
 
   // 2. Validate role
   const validRoles = ["ADMIN", "CLIENT", "FREELANCER"];
   const normalizedRole = role.toUpperCase();
   if (!validRoles.includes(normalizedRole)) {
-    throw Object.assign(new Error("Invalid role specified"), { statusCode: 400 });
+    throw Object.assign(new Error("Invalid role specified"), {
+      statusCode: 400,
+    });
   }
   if (normalizedRole === "ADMIN") {
-    throw Object.assign(new Error("Admin accounts cannot be created through registration"), { statusCode: 403 });
+    throw Object.assign(
+      new Error("Admin accounts cannot be created through registration"),
+      { statusCode: 403 },
+    );
   }
 
   // 3. Hash password and generate OTP
@@ -62,7 +82,9 @@ export async function registerUser({ name, email, password, role = "CLIENT", pho
   });
 
   // 5. Send OTP email (don't wait for it to return to speed up response)
-  sendOtpEmail(normalizedEmail, otpCode, name).catch(err => console.error("Email send error:", err));
+  sendOtpEmail(normalizedEmail, otpCode, name).catch((err) =>
+    console.error("Email send error:", err),
+  );
 
   return {
     email: pendingUser.email,
@@ -85,26 +107,40 @@ export async function loginUser({ email, password, ipAddress, userAgent }) {
 
   if (!user) {
     // Check if user is in pending
-    const pending = await prisma.pendingUser.findUnique({ where: { email: normalizedEmail } });
+    const pending = await prisma.pendingUser.findUnique({
+      where: { email: normalizedEmail },
+    });
     if (pending) {
-      throw Object.assign(new Error("Please verify your email before logging in."), { statusCode: 403 });
+      throw Object.assign(
+        new Error("Please verify your email before logging in."),
+        { statusCode: 403 },
+      );
     }
-    throw Object.assign(new Error("Invalid email or password"), { statusCode: 401 });
+    throw Object.assign(new Error("Invalid email or password"), {
+      statusCode: 401,
+    });
   }
 
   // Check account status
   if (user.status === "SUSPENDED") {
-    throw Object.assign(new Error("Your account has been suspended. Contact support."), { statusCode: 403 });
+    throw Object.assign(
+      new Error("Your account has been suspended. Contact support."),
+      { statusCode: 403 },
+    );
   }
 
   if (user.status === "DEACTIVATED") {
-    throw Object.assign(new Error("This account has been deactivated"), { statusCode: 403 });
+    throw Object.assign(new Error("This account has been deactivated"), {
+      statusCode: 403,
+    });
   }
 
   // Verify password
   const isPasswordValid = await comparePassword(password, user.password);
   if (!isPasswordValid) {
-    throw Object.assign(new Error("Invalid email or password"), { statusCode: 401 });
+    throw Object.assign(new Error("Invalid email or password"), {
+      statusCode: 401,
+    });
   }
 
   // Session logic...
@@ -133,7 +169,7 @@ export async function loginUser({ email, password, ipAddress, userAgent }) {
       status: user.status,
     },
     sessionToken,
-    expiresAt: session.expiresAt
+    expiresAt: session.expiresAt,
   };
 }
 
@@ -198,10 +234,15 @@ export async function forgotPassword(email) {
   const normalizedEmail = email.toLowerCase().trim();
 
   // 1. Check if user exists
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
   if (!user) {
     // For security, don't reveal if user exists. Just say "If an account exists..."
-    return { message: "If an account exists with this email, a reset code has been sent." };
+    return {
+      message:
+        "If an account exists with this email, a reset code has been sent.",
+    };
   }
 
   // 2. Generate reset code (6 digits)
@@ -210,20 +251,27 @@ export async function forgotPassword(email) {
 
   // 3. Cleanup old unverified requests and Save new one
   await prisma.$transaction([
-    prisma.passwordReset.deleteMany({ where: { email: normalizedEmail, verified: false } }),
+    prisma.passwordReset.deleteMany({
+      where: { email: normalizedEmail, verified: false },
+    }),
     prisma.passwordReset.create({
       data: {
         email: normalizedEmail,
         code: hashedCode,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
-      }
-    })
+      },
+    }),
   ]);
 
   // 4. Send email
-  sendPasswordResetEmail(normalizedEmail, resetCode, user.name).catch(err => console.error("Email send error:", err));
+  sendPasswordResetEmail(normalizedEmail, resetCode, user.name).catch((err) =>
+    console.error("Email send error:", err),
+  );
 
-  return { message: "If an account exists with this email, a reset code has been sent." };
+  return {
+    message:
+      "If an account exists with this email, a reset code has been sent.",
+  };
 }
 
 /**
@@ -242,12 +290,16 @@ export async function verifyResetCode(email, code) {
   });
 
   if (!resetRequest) {
-    throw Object.assign(new Error("Invalid or expired reset code"), { statusCode: 400 });
+    throw Object.assign(new Error("Invalid or expired reset code"), {
+      statusCode: 400,
+    });
   }
 
   const isValid = await comparePassword(code, resetRequest.code);
   if (!isValid) {
-    throw Object.assign(new Error("Invalid or expired reset code"), { statusCode: 400 });
+    throw Object.assign(new Error("Invalid or expired reset code"), {
+      statusCode: 400,
+    });
   }
 
   // Mark as verified
@@ -276,7 +328,9 @@ export async function resetPassword(email, newPassword) {
   });
 
   if (!verifiedRequest) {
-    throw Object.assign(new Error("Reset session expired or not found"), { statusCode: 403 });
+    throw Object.assign(new Error("Reset session expired or not found"), {
+      statusCode: 403,
+    });
   }
 
   // 2. Hash new password

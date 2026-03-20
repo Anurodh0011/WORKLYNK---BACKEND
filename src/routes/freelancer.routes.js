@@ -8,35 +8,26 @@ import { successResponse } from "../helpers/response.helper.js";
 
 const freelancerRouter = Router();
 
-// All freelancer routes require authentication + FREELANCER role + verified email
-freelancerRouter.use(authenticate, requireVerified, authorize("FREELANCER", "ADMIN"));
+import * as freelancerController from "../controllers/freelancer.controller.js";
 
-/**
- * GET /api/v1/freelancer/profile
- * Get freelancer profile
- */
-freelancerRouter.get("/profile", (req, res) => {
+// Public/Client/Freelancer: Browse freelancers
+freelancerRouter.get("/", authenticate, requireVerified, authorize("CLIENT", "ADMIN", "FREELANCER"), freelancerController.listFreelancers);
+
+// Restricted to Freelancers/Admins
+freelancerRouter.get("/profile", authenticate, requireVerified, authorize("FREELANCER", "ADMIN"), (req, res) => {
   return successResponse(res, "Freelancer profile", {
     user: req.user,
   });
 });
 
-/**
- * GET /api/v1/freelancer/available-projects
- * Get projects available for application (placeholder)
- */
-freelancerRouter.get("/available-projects", (req, res) => {
+freelancerRouter.get("/available-projects", authenticate, requireVerified, authorize("FREELANCER", "ADMIN"), (req, res) => {
   return successResponse(res, "Available projects endpoint", {
     message: "Projects available for application will appear here",
     user: req.user.name,
   });
 });
 
-/**
- * GET /api/v1/freelancer/applications
- * Get freelancer's job applications (placeholder)
- */
-freelancerRouter.get("/applications", (req, res) => {
+freelancerRouter.get("/applications", authenticate, requireVerified, authorize("FREELANCER", "ADMIN"), (req, res) => {
   return successResponse(res, "Freelancer applications endpoint", {
     message: "Your applications will appear here",
     user: req.user.name,

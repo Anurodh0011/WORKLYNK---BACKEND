@@ -2,11 +2,26 @@
 // Middleware to handle multipart/form-data requests
 
 import multer from "multer";
+import path from "path";
+import fs from "fs";
 
-// We use memory storage because we just need to parse fields
-// If we needed file uploads, we'd configure disk storage or a cloud provider
-const storage = multer.memoryStorage();
+// Ensure upload directory exists
+const uploadDir = "uploads";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 
-// This middleware parses any multipart/form-data and makes it available in req.body
-// We use .any() to allow any fields, but it's restricted to text fields unless we handle files
-export const parseMultipart = multer({ storage }).any();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+export const parseMultipart = upload.any();
+export default upload;

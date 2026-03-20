@@ -35,6 +35,33 @@ enum DocumentType {
   VAT
 }
 
+enum ProjectStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum BudgetType {
+  FIXED
+  HOURLY
+}
+
+enum ExperienceLevel {
+  ENTRY
+  INTERMEDIATE
+  EXPERT
+}
+
+enum ApplicationStatus {
+  DRAFT
+  PENDING
+  SHORTLISTED
+  REJECTED
+  ACCEPTED
+}
+
 // ─── User Model ──────────────────────────────────────────
 // Only verified users are stored here
 model User {
@@ -51,6 +78,13 @@ model User {
 
   sessions      Session[]
   profile       Profile?
+  projects      Project[]     @relation("ClientProjects")
+  applications  Application[] @relation("FreelancerApplications")
+
+  // Bookmarking Relations
+  savedProjects       SavedProject[] @relation("UserSavedProjects")
+  savedFreelancers    SavedFreelancer[] @relation("ClientSavedFreelancers")
+  savedByClients      SavedFreelancer[] @relation("FreelancerSavedByClients")
 
   @@map("users")
 }
@@ -129,4 +163,77 @@ model Profile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
+}
+
+// ─── Project Model ───────────────────────────────────────
+model Project {
+  id              String          @id @default(uuid())
+  clientId        String
+  title           String
+  description     String
+  category        String
+  budgetType      BudgetType      @default(FIXED)
+  budgetMin       Float?
+  budgetMax       Float?
+  skillsRequired  String[]
+  experienceLevel ExperienceLevel @default(INTERMEDIATE)
+  duration        String?
+  attachments     Json?           // Array of { name, url, type }
+  checklist       Json?           // Array of strings
+  status          ProjectStatus   @default(DRAFT)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  client          User            @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Cascade)
+  applications    Application[]
+  savedBy         SavedProject[]
+
+  @@map("projects")
+}
+
+// ─── Application Model ───────────────────────────────────
+model Application {
+  id                String            @id @default(uuid())
+  projectId         String
+  freelancerId      String
+  proposal          String
+  bidAmount         Float
+  estimatedDuration String
+  attachments       Json?             // Array of { name, url, type }
+  status            ApplicationStatus @default(PENDING)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  freelancer        User              @relation("FreelancerApplications", fields: [freelancerId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, freelancerId]) // One application per project per freelancer
+  @@map("applications")
+}
+
+// ─── Bookmarking System ──────────────────────────────────
+model SavedProject {
+  id          String   @id @default(uuid())
+  userId      String
+  projectId   String
+  createdAt   DateTime @default(now())
+
+  user        User     @relation("UserSavedProjects", fields: [userId], references: [id], onDelete: Cascade)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@map("saved_projects")
+}
+
+model SavedFreelancer {
+  id            String   @id @default(uuid())
+  clientId      String
+  freelancerId  String
+  createdAt     DateTime @default(now())
+
+  client        User     @relation("ClientSavedFreelancers", fields: [clientId], references: [id], onDelete: Cascade)
+  freelancer    User     @relation("FreelancerSavedByClients", fields: [freelancerId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, freelancerId])
+  @@map("saved_freelancers")
 }
