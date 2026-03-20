@@ -19,14 +19,16 @@ const transporter = nodemailer.createTransport({
 export async function verifyEmailConnection() {
   try {
     if (!env.email.address || !env.email.appPassword) {
-      console.warn("⚠️  Email credentials not configured — OTP emails will not be sent");
+      console.warn(
+        "Email credentials not configured — OTP emails will not be sent",
+      );
       return false;
     }
     await transporter.verify();
-    console.log("✅ Email service connected successfully");
+    console.log("Email service connected successfully");
     return true;
   } catch (error) {
-    console.warn("⚠️  Email service connection failed:", error.message);
+    console.warn("Email service connection failed:", error.message);
     return false;
   }
 }
@@ -72,15 +74,19 @@ export async function sendOtpEmail(to, otpCode, userName = "User") {
     console.log(`📧 OTP email sent to ${to} — MessageId: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("❌ Failed to send OTP email:", error.message);
+    console.error("Failed to send OTP email:", error.message);
 
     // If in dev, we allow it to proceed so developers can test the verification flow via console logs
     if (env.nodeEnv === "development") {
-      console.warn("⚠️  Email delivery failed, but proceeding in dev mode since OTP was logged above.");
+      console.warn(
+        "Email delivery failed, but proceeding in dev mode since OTP was logged above.",
+      );
       return { success: true, messageId: "dev-mock-id" };
     }
 
-    throw new Error("Failed to send verification email. Please try again later.");
+    throw new Error(
+      "Failed to send verification email. Please try again later.",
+    );
   }
 }
 
@@ -96,7 +102,7 @@ export async function sendWelcomeEmail(to, userName = "User") {
     subject: "Welcome to Worklynk! 🎉",
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px; background: #f8fafc; border-radius: 12px;">
-        <h2 style="color: #1e293b;">Welcome aboard, ${userName}! 🚀</h2>
+        <h2 style="color: #1e293b;">Welcome aboard, ${userName}! </h2>
         <p style="color: #475569; font-size: 15px;">
           Your email has been verified. You're all set to start using Worklynk — 
           connecting Nepali clients with talented freelancers.
@@ -117,7 +123,7 @@ export async function sendWelcomeEmail(to, userName = "User") {
     console.log(`📧 Welcome email sent to ${to}`);
   } catch (error) {
     // Welcome email failure is non-critical
-    console.warn("⚠️  Failed to send welcome email:", error.message);
+    console.warn("Failed to send welcome email:", error.message);
   }
 }
 /**
@@ -158,7 +164,7 @@ export async function sendPasswordResetEmail(to, otpCode, userName = "User") {
     await transporter.sendMail(mailOptions);
     console.log(`📧 Reset email sent to ${to}`);
   } catch (error) {
-    console.error("❌ Failed to send reset email:", error.message);
+    console.error("Failed to send reset email:", error.message);
     if (env.nodeEnv === "development") {
       return { success: true };
     }
