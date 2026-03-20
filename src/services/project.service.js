@@ -136,8 +136,8 @@ export async function getProjects(filters = {}) {
 /**
  * Get project by ID
  */
-export async function getProjectById(projectId) {
-  return await prisma.project.findUnique({
+export async function getProjectById(projectId, userId = null) {
+  const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
       client: {
@@ -153,23 +153,48 @@ export async function getProjectById(projectId) {
           }
         }
       },
-      applications: {
-        include: {
-          freelancer: {
-            select: {
-              name: true,
-              profile: {
-                select: {
-                  profilePicture: true,
-                  headline: true,
-                }
-              }
-            }
-          }
-        }
+      _count: {
+        select: { applications: true }
       }
     }
   });
+
+  if (!project) return null;
+
+  let myApplication = null;
+  let isBookmarked = false;
+
+  if (userId) {
+    myApplication = await prisma.application.findFirst({
+      where: {
+        projectId,
+        freelancerId: userId
+      },
+      select: {
+        id: true,
+        status: true,
+        bidAmount: true,
+        proposal: true,
+        createdAt: true
+      }
+    });
+
+    const bookmark = await prisma.savedProject.findUnique({
+      where: {
+        userId_projectId: {
+          userId,
+          projectId
+        }
+      }
+    });
+    isBookmarked = !!bookmark;
+  }
+
+  return {
+    ...project,
+    myApplication,
+    isBookmarked
+  };
 }
 
 /**

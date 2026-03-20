@@ -80,7 +80,7 @@ export async function getProjects(req, res, next) {
 export async function getProjectById(req, res, next) {
   try {
     const { id: projectId } = req.params;
-    const project = await projectService.getProjectById(projectId);
+    const project = await projectService.getProjectById(projectId, req.user?.id);
 
     if (!project) {
       return errorResponse(res, "Project not found", null, 404);

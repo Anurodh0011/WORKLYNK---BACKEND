@@ -1,6 +1,6 @@
 import express from "express";
 import * as bookmarkController from "../controllers/bookmark.controller.js";
-import { authenticate } from "../middleware/auth.js";
+import { authenticate } from "../middleware/authenticate.js";
 
 const router = express.Router();
 
