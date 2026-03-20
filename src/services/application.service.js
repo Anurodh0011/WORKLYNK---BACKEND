@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../prisma/client.js";
 
 export const applyForProject = async (projectId, freelancerId, data) => {
   // Check if project exists and is OPEN

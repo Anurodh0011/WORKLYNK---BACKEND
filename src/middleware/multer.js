@@ -21,4 +21,7 @@ const storage = multer.diskStorage({
   },
 });
 
-export const parseMultipart = multer({ storage }).any();
+const upload = multer({ storage });
+
+export const parseMultipart = upload.any();
+export default upload;

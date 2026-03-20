@@ -1,6 +1,3 @@
-// ─── Validation Middleware ───────────────────────────────
-// Runs express-validator chains and returns formatted errors
-
 import { validationResult } from "express-validator";
 import { errorResponse } from "../helpers/response.helper.js";
 

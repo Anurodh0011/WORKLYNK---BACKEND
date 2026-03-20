@@ -1,6 +1,8 @@
 import express from "express";
 import * as applicationController from "../controllers/application.controller.js";
-import { authenticate, authorize } from "../middleware/auth.js";
+import { authenticate } from "../middleware/authenticate.js";
+import { authorize } from "../middleware/authorize.js";
+import { validate } from "../middleware/validate.js";
 import { createApplicationValidator, updateApplicationStatusValidator } from "../validators/application.validator.js";
 import upload from "../middleware/multer.js";
 
@@ -13,6 +15,7 @@ router.post(
   authorize("FREELANCER"),
   upload.array("attachments", 5),
   createApplicationValidator,
+  validate,
   applicationController.apply
 );
 
@@ -37,6 +40,7 @@ router.patch(
   "/:id/status",
   authenticate,
   updateApplicationStatusValidator,
+  validate,
   applicationController.updateStatus
 );
 

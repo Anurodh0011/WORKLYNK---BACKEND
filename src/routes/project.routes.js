@@ -18,7 +18,8 @@ const router = Router();
 router.get(
   "/",
   authenticate,
-  validate(getProjectsRules),
+  getProjectsRules,
+  validate,
   projectController.getProjects
 );
 
@@ -50,7 +51,8 @@ router.post(
   authenticate,
   authorize("CLIENT"),
   parseMultipart,
-  validate(createProjectRules),
+  createProjectRules,
+  validate,
   projectController.createProject
 );
 
@@ -62,7 +64,8 @@ router.patch(
   authenticate,
   authorize("CLIENT"),
   parseMultipart,
-  validate(updateProjectRules),
+  updateProjectRules,
+  validate,
   projectController.updateProject
 );
 
