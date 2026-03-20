@@ -81,6 +81,11 @@ model User {
   projects      Project[]     @relation("ClientProjects")
   applications  Application[] @relation("FreelancerApplications")
 
+  // Bookmarking Relations
+  savedProjects       SavedProject[] @relation("UserSavedProjects")
+  savedFreelancers    SavedFreelancer[] @relation("ClientSavedFreelancers")
+  savedByClients      SavedFreelancer[] @relation("FreelancerSavedByClients")
+
   @@map("users")
 }
 
@@ -181,6 +186,7 @@ model Project {
 
   client          User            @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Cascade)
   applications    Application[]
+  savedBy         SavedProject[]
 
   @@map("projects")
 }
@@ -203,4 +209,31 @@ model Application {
 
   @@unique([projectId, freelancerId]) // One application per project per freelancer
   @@map("applications")
+}
+
+// ─── Bookmarking System ──────────────────────────────────
+model SavedProject {
+  id          String   @id @default(uuid())
+  userId      String
+  projectId   String
+  createdAt   DateTime @default(now())
+
+  user        User     @relation("UserSavedProjects", fields: [userId], references: [id], onDelete: Cascade)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@map("saved_projects")
+}
+
+model SavedFreelancer {
+  id            String   @id @default(uuid())
+  clientId      String
+  freelancerId  String
+  createdAt     DateTime @default(now())
+
+  client        User     @relation("ClientSavedFreelancers", fields: [clientId], references: [id], onDelete: Cascade)
+  freelancer    User     @relation("FreelancerSavedByClients", fields: [freelancerId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, freelancerId])
+  @@map("saved_freelancers")
 }
