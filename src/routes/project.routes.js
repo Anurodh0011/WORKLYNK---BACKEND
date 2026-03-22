@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as projectController from "../controllers/project.controller.js";
-import { authenticate } from "../middleware/authenticate.js";
+import { authenticate, tryAuthenticate } from "../middleware/authenticate.js";
 import { authorize } from "../middleware/authorize.js";
 import { validate } from "../middleware/validate.js";
 import { parseMultipart } from "../middleware/multer.js";
@@ -17,7 +17,7 @@ const router = Router();
  */
 router.get(
   "/",
-  authenticate,
+  tryAuthenticate,
   getProjectsRules,
   validate,
   projectController.getProjects
@@ -38,7 +38,7 @@ router.get(
  */
 router.get(
   "/:id",
-  authenticate,
+  tryAuthenticate,
   projectController.getProjectById
 );
 
