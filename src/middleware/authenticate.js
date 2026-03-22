@@ -34,3 +34,32 @@ export function authenticate(req, res, next) {
       return errorResponse(res, "Authentication failed", null, 500);
     });
 }
+
+/**
+ * Middleware: Try to authenticate session
+ * Checks for session token but continues even if not found
+ * Attaches `req.user` if token is valid
+ */
+export function tryAuthenticate(req, res, next) {
+  const sessionToken =
+    req.cookies?.session_token ||
+    req.header("Authorization")?.replace("Bearer ", "").trim() ||
+    null;
+
+  if (!sessionToken) {
+    return next();
+  }
+
+  validateSession(sessionToken)
+    .then((user) => {
+      if (user) {
+        req.user = user;
+        req.sessionToken = sessionToken;
+      }
+      next();
+    })
+    .catch((error) => {
+      console.error("Try auth middleware error:", error);
+      next(); // Still continue even if token is invalid/expired
+    });
+}

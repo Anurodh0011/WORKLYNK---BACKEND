@@ -2,7 +2,7 @@
 // Routes accessible only by users with FREELANCER role
 
 import { Router } from "express";
-import { authenticate } from "../middleware/authenticate.js";
+import { authenticate, tryAuthenticate } from "../middleware/authenticate.js";
 import { authorize, requireVerified } from "../middleware/authorize.js";
 import { successResponse } from "../helpers/response.helper.js";
 
@@ -11,7 +11,7 @@ const freelancerRouter = Router();
 import * as freelancerController from "../controllers/freelancer.controller.js";
 
 // Public/Client/Freelancer: Browse freelancers
-freelancerRouter.get("/", authenticate, requireVerified, authorize("CLIENT", "ADMIN", "FREELANCER"), freelancerController.listFreelancers);
+freelancerRouter.get("/", tryAuthenticate, freelancerController.listFreelancers);
 
 // Restricted to Freelancers/Admins
 freelancerRouter.get("/profile", authenticate, requireVerified, authorize("FREELANCER", "ADMIN"), (req, res) => {

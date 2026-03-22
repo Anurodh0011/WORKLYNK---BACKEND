@@ -30,7 +30,13 @@ export const updateProfile = async (req, res, next) => {
 // @access  Private
 export const submitVerification = async (req, res, next) => {
   try {
-    const { panVatNumber, documentImage, documentType } = req.body;
+    const { panVatNumber, documentType } = req.body;
+    let { documentImage } = req.body;
+
+    if (req.file) {
+      documentImage = req.file.path;
+    }
+
     if (!panVatNumber || !documentType) {
       return errorResponse(res, "PAN/VAT number and type are required", null, 400);
     }

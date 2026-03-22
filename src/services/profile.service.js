@@ -4,6 +4,11 @@ import prisma from "../prisma/client.js";
 export const getProfileByUserId = async (userId) => {
   let profile = await prisma.profile.findUnique({
     where: { userId },
+    include: {
+      user: {
+        select: { phoneNumber: true, name: true, email: true }
+      }
+    }
   });
   
   if (!profile) {
@@ -22,10 +27,23 @@ export const updateProfileInfo = async (userId, data) => {
   // Clean undefined keys so we don't overwrite with undefined
   Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
+  // Update User table if phoneNumber is provided
+  if (data.phoneNumber !== undefined) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { phoneNumber: data.phoneNumber },
+    });
+  }
+
   return await prisma.profile.upsert({
     where: { userId },
     update: updateData,
     create: { userId, ...updateData },
+    include: {
+      user: {
+        select: { phoneNumber: true, name: true, email: true }
+      }
+    }
   });
 };
 
