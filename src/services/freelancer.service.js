@@ -9,7 +9,6 @@ export async function getFreelancers(filters = {}) {
   const where = {
     role: "FREELANCER",
     profile: {
-      verificationStatus: "APPROVED",
       ...(skills && skills.length > 0 && {
         skills: { hasSome: skills }
       }),
