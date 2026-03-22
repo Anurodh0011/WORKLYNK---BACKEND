@@ -45,10 +45,12 @@ export function requireVerified(req, res, next) {
     return errorResponse(res, "Authentication required", null, 401);
   }
 
-  if (!req.user.emailVerified) {
+  // In this system, any user in the main 'users' table is already email-verified.
+  // We check if the account is ACTIVE.
+  if (req.user.status !== "ACTIVE") {
     return errorResponse(
       res,
-      "Email verification required. Please verify your email to access this resource.",
+      "Your account is not active. Please contact support.",
       null,
       403
     );
