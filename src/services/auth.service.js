@@ -196,6 +196,12 @@ export async function validateSession(sessionToken) {
           email: true,
           role: true,
           status: true,
+          phoneNumber: true,
+          profile: {
+            select: {
+              verificationStatus: true
+            }
+          }
         },
       },
     },
@@ -217,7 +223,13 @@ export async function getUserById(userId) {
       email: true,
       role: true,
       status: true,
+      phoneNumber: true,
       lastLoginAt: true,
+      profile: {
+        select: {
+          verificationStatus: true
+        }
+      }
     },
   });
 }
