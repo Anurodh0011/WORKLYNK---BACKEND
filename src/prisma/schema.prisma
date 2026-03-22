@@ -62,6 +62,20 @@ enum ApplicationStatus {
   ACCEPTED
 }
 
+enum ContractStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_REVIEW
+  PAID
+  CANCELLED
+}
+
 // ─── User Model ──────────────────────────────────────────
 // Only verified users are stored here
 model User {
@@ -80,6 +94,8 @@ model User {
   profile       Profile?
   projects      Project[]     @relation("ClientProjects")
   applications  Application[] @relation("FreelancerApplications")
+  contractsAsClient     Contract[] @relation("ClientContracts")
+  contractsAsFreelancer Contract[] @relation("FreelancerContracts")
 
   // Bookmarking Relations
   savedProjects       SavedProject[] @relation("UserSavedProjects")
@@ -186,6 +202,7 @@ model Project {
 
   client          User            @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Cascade)
   applications    Application[]
+  contracts       Contract[]
   savedBy         SavedProject[]
 
   @@map("projects")
@@ -206,6 +223,7 @@ model Application {
 
   project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   freelancer        User              @relation("FreelancerApplications", fields: [freelancerId], references: [id], onDelete: Cascade)
+  contract          Contract?
 
   @@unique([projectId, freelancerId]) // One application per project per freelancer
   @@map("applications")
@@ -236,4 +254,62 @@ model SavedFreelancer {
 
   @@unique([clientId, freelancerId])
   @@map("saved_freelancers")
+}
+
+// ─── Contract & Kanban System ─────────────────────────────
+model Contract {
+  id              String         @id @default(uuid())
+  projectId       String
+  clientId        String
+  freelancerId    String
+  applicationId   String         @unique
+  title           String
+  description     String?
+  status          ContractStatus @default(ACTIVE)
+  totalAmount     Float
+  paidAmount      Float          @default(0)
+  startDate       DateTime       @default(now())
+  endDate         DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client          User           @relation("ClientContracts", fields: [clientId], references: [id], onDelete: Cascade)
+  freelancer      User           @relation("FreelancerContracts", fields: [freelancerId], references: [id], onDelete: Cascade)
+  application     Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  milestones      Milestone[]
+  tasks           Task[]
+
+  @@map("contracts")
+}
+
+model Milestone {
+  id              String          @id @default(uuid())
+  contractId      String
+  title           String
+  description     String?
+  amount          Float
+  status          MilestoneStatus @default(PENDING)
+  dueDate         DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  contract        Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@map("milestones")
+}
+
+model Task {
+  id              String   @id @default(uuid())
+  contractId      String
+  title           String
+  description     String?
+  status          String   @default("TODO") // TODO, IN_PROGRESS, DONE
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  contract        Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
 }
