@@ -103,6 +103,7 @@ export async function loginUser({ email, password, ipAddress, userAgent }) {
   // Find user in main table only
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
+    include: { profile: true },
   });
 
   if (!user) {
@@ -167,6 +168,10 @@ export async function loginUser({ email, password, ipAddress, userAgent }) {
       email: user.email,
       role: user.role,
       status: user.status,
+      phoneNumber: user.phoneNumber,
+      profile: user.profile ? {
+        verificationStatus: user.profile.verificationStatus
+      } : null
     },
     sessionToken,
     expiresAt: session.expiresAt,
