@@ -47,7 +47,12 @@ export async function updateProject(req, res, next) {
         url: `/uploads/${file.filename}`,
         type: file.mimetype,
       }));
-      updateData.attachments = [...(updateData.attachments || []), ...newAttachments];
+      
+      // Fetch existing project to get current attachments
+      const existingProject = await projectService.getProjectById(projectId);
+      const existingAttachments = existingProject?.attachments || [];
+      
+      updateData.attachments = [...existingAttachments, ...newAttachments];
     }
 
     const project = await projectService.updateProject(projectId, clientId, updateData);

@@ -24,16 +24,19 @@ export const createProjectRules = [
     .withMessage("Category is required"),
 
   body("budgetType")
+    .if(body("status").equals("OPEN"))
     .optional()
     .isIn(["FIXED", "HOURLY"])
     .withMessage("Invalid budget type"),
 
   body("budgetMin")
+    .if(body("status").equals("OPEN"))
     .optional({ checkFalsy: true })
     .isNumeric()
     .withMessage("Minimum budget must be a number"),
 
   body("budgetMax")
+    .if(body("status").equals("OPEN"))
     .optional({ checkFalsy: true })
     .isNumeric()
     .withMessage("Maximum budget must be a number"),
@@ -44,6 +47,7 @@ export const createProjectRules = [
     .withMessage("At least one skill is required"),
 
   body("experienceLevel")
+    .if(body("status").equals("OPEN"))
     .optional()
     .isIn(["ENTRY", "INTERMEDIATE", "EXPERT"])
     .withMessage("Invalid experience level"),
