@@ -203,3 +203,65 @@ export const sendContractToFreelancer = async (contractId, clientId) => {
     include: { project: true, freelancer: { select: { name: true, email: true } } }
   });
 };
+
+/**
+ * Freelancer responds to a contract offer (Accept or Reject/Negotiate)
+ */
+export const respondToContract = async (contractId, freelancerId, action, remarks) => {
+  return await prisma.$transaction(async (tx) => {
+    // 1. Verify contract and freelancer
+    const contract = await tx.contract.findUnique({
+      where: { id: contractId },
+      include: { project: true }
+    });
+
+    if (!contract || contract.freelancerId !== freelancerId) {
+      const error = new Error("Unauthorized or contract not found");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (contract.status !== "PENDING_FREELANCER") {
+      const error = new Error("Contract is not in a state that can be responded to");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (action === "ACCEPT") {
+      // 2. Transition to ACTIVE
+      const updatedContract = await tx.contract.update({
+        where: { id: contractId },
+        data: { 
+          status: "ACTIVE",
+          startDate: new Date(),
+        }
+      });
+
+      // 3. Create default Kanban columns
+      const defaultColumns = [
+        "BackLog", "To-Do", "In Progress", "Testing", "Done", "Completed"
+      ];
+
+      await tx.boardColumn.createMany({
+        data: defaultColumns.map((name, index) => ({
+          contractId,
+          name,
+          order: index
+        }))
+      });
+
+      return updatedContract;
+    } else if (action === "REJECT") {
+      // 2. Transition back to DRAFT for client to revise
+      return await tx.contract.update({
+        where: { id: contractId },
+        data: { 
+          status: "DRAFT",
+          remarks: remarks || "Freelancer requested changes."
+        }
+      });
+    } else {
+      throw new Error("Invalid action. Must be ACCEPT or REJECT.");
+    }
+  });
+};

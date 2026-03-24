@@ -99,6 +99,12 @@ export const getUserApplications = async (freelancerId) => {
           budgetMax: true,
         },
       },
+      contract: {
+        select: {
+          id: true,
+          status: true,
+        }
+      }
     },
     orderBy: { createdAt: "desc" },
   });

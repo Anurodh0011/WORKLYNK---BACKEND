@@ -35,4 +35,12 @@ router.post(
   contractController.sendContract
 );
 
+// Freelancer responds to contract (Freelancer only)
+router.post(
+  "/:id/respond",
+  authenticate,
+  authorize("FREELANCER"),
+  contractController.respondToContract
+);
+
 export default router;

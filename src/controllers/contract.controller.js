@@ -92,3 +92,24 @@ export const sendContract = async (req, res) => {
     res.status(error.statusCode || 400).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * Freelancer response to contract offer
+ */
+export const respondToContract = async (req, res) => {
+  try {
+    const contractId = req.params.id;
+    const freelancerId = req.user.id;
+    const { action, remarks } = req.body;
+
+    const contract = await contractService.respondToContract(contractId, freelancerId, action, remarks);
+
+    res.status(200).json({
+      success: true,
+      message: `Contract ${action.toLowerCase()}ed successfully`,
+      data: contract,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+};

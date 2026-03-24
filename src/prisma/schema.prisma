@@ -282,8 +282,23 @@ model Contract {
   application     Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   milestones      Milestone[]
   tasks           Task[]
+  boardColumns    BoardColumn[]
 
   @@map("contracts")
+}
+
+model BoardColumn {
+  id              String   @id @default(uuid())
+  contractId      String
+  name            String
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  contract        Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  tasks           Task[]
+
+  @@map("board_columns")
 }
 
 model Milestone {
@@ -306,13 +321,16 @@ model Milestone {
 model Task {
   id              String   @id @default(uuid())
   contractId      String
+  columnId        String?
   title           String
   description     String?
-  status          String   @default("TODO") // TODO, IN_PROGRESS, DONE
+  status          String   @default("TODO") // Legacy field, keeping for compatibility if needed, but columnId is primary
+  order           Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  contract        Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  contract        Contract     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  column          BoardColumn? @relation(fields: [columnId], references: [id], onDelete: SetNull)
 
   @@map("tasks")
 }
