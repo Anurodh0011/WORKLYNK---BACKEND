@@ -63,6 +63,8 @@ enum ApplicationStatus {
 }
 
 enum ContractStatus {
+  DRAFT
+  PENDING_FREELANCER
   ACTIVE
   COMPLETED
   CANCELLED
@@ -265,9 +267,10 @@ model Contract {
   applicationId   String         @unique
   title           String
   description     String?
-  status          ContractStatus @default(ACTIVE)
+  status          ContractStatus @default(DRAFT)
   totalAmount     Float
   paidAmount      Float          @default(0)
+  remarks         String?        // Freelancer's rejection remarks
   startDate       DateTime       @default(now())
   endDate         DateTime?
   createdAt       DateTime       @default(now())

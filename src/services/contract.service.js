@@ -37,7 +37,7 @@ export const acceptApplication = async (applicationId, clientId) => {
         title: application.project.title,
         description: application.proposal,
         totalAmount: application.bidAmount,
-        status: "ACTIVE",
+        status: "DRAFT",
       },
     });
 
@@ -113,5 +113,93 @@ export const getUserContracts = async (userId, role) => {
       freelancer: { select: { name: true } },
     },
     orderBy: { createdAt: "desc" },
+  });
+};
+
+/**
+ * Update contract terms (description and milestones)
+ */
+export const updateContract = async (contractId, clientId, data) => {
+  const { description, milestones } = data;
+
+  return await prisma.$transaction(async (tx) => {
+    // 1. Verify contract ownership
+    const contract = await tx.contract.findUnique({
+      where: { id: contractId }
+    });
+
+    if (!contract || contract.clientId !== clientId) {
+      const error = new Error("Unauthorized or contract not found");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (contract.status !== "DRAFT" && contract.status !== "PENDING_FREELANCER") {
+      const error = new Error("Cannot edit contract in its current status");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // 2. Update basic info
+    const updatedContract = await tx.contract.update({
+      where: { id: contractId },
+      data: { description },
+      include: { milestones: true }
+    });
+
+    // 3. Sync Milestones (Basic implementation: delete all and recreate)
+    if (milestones && Array.isArray(milestones)) {
+      // Delete existing
+      await tx.milestone.deleteMany({
+        where: { contractId }
+      });
+
+      // Create new ones
+      if (milestones.length > 0) {
+        await tx.milestone.createMany({
+          data: milestones.map(m => ({
+            contractId,
+            title: m.title,
+            description: m.description,
+            amount: parseFloat(m.amount),
+            dueDate: m.dueDate ? new Date(m.dueDate) : null,
+            status: "PENDING"
+          }))
+        });
+      }
+    }
+
+    // Return updated contract with milestones
+    return await tx.contract.findUnique({
+      where: { id: contractId },
+      include: { milestones: true, project: true, freelancer: { select: { name: true, email: true } } }
+    });
+  });
+};
+
+/**
+ * Send contract to freelancer for review
+ */
+export const sendContractToFreelancer = async (contractId, clientId) => {
+  const contract = await prisma.contract.findUnique({
+    where: { id: contractId }
+  });
+
+  if (!contract || contract.clientId !== clientId) {
+    const error = new Error("Unauthorized or contract not found");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (contract.status !== "DRAFT") {
+    const error = new Error("Contract must be in DRAFT status to send");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return await prisma.contract.update({
+    where: { id: contractId },
+    data: { status: "PENDING_FREELANCER" },
+    include: { project: true, freelancer: { select: { name: true, email: true } } }
   });
 };

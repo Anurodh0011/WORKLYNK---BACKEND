@@ -51,3 +51,44 @@ export const getMyContracts = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * Update contract terms (Drafting)
+ */
+export const updateContract = async (req, res) => {
+  try {
+    const contractId = req.params.id;
+    const clientId = req.user.id;
+    const updateData = req.body;
+
+    const contract = await contractService.updateContract(contractId, clientId, updateData);
+
+    res.status(200).json({
+      success: true,
+      message: "Contract updated successfully",
+      data: contract,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Send contract to freelancer
+ */
+export const sendContract = async (req, res) => {
+  try {
+    const contractId = req.params.id;
+    const clientId = req.user.id;
+
+    const contract = await contractService.sendContractToFreelancer(contractId, clientId);
+
+    res.status(200).json({
+      success: true,
+      message: "Contract sent to freelancer successfully",
+      data: contract,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+};
