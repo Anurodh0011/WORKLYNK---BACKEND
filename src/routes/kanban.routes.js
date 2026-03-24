@@ -7,6 +7,7 @@ const router = express.Router();
 router.get("/:contractId", authenticate, kanbanController.getBoardData);
 router.post("/tasks", authenticate, kanbanController.createTask);
 router.patch("/tasks/:taskId/move", authenticate, kanbanController.moveTask);
+router.post("/columns", authenticate, kanbanController.createColumn);
 router.patch("/columns/:columnId", authenticate, kanbanController.renameColumn);
 router.post("/contracts/:contractId/milestones/:milestoneId/submit", authenticate, kanbanController.submitMilestone);
 router.post("/contracts/:contractId/milestones/:milestoneId/review", authenticate, kanbanController.reviewMilestone);

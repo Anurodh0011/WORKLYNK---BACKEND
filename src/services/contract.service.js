@@ -41,27 +41,15 @@ export const acceptApplication = async (applicationId, clientId) => {
       },
     });
 
-    // 3. Update Application Status
+    // 3. Update Application Status to OFFERSENT or ACCEPTED
     await tx.application.update({
       where: { id: applicationId },
       data: { status: "ACCEPTED" },
     });
 
-    // 4. Update Project Status to IN_PROGRESS
-    await tx.project.update({
-      where: { id: application.projectId },
-      data: { status: "IN_PROGRESS" },
-    });
-
-    // 5. (Optional) Reject other applications
-    await tx.application.updateMany({
-      where: {
-        projectId: application.projectId,
-        id: { not: applicationId },
-        status: "PENDING",
-      },
-      data: { status: "REJECTED" },
-    });
+    // NOTE: We do not freeze the project as IN_PROGRESS here,
+    // protecting it only when the freelancer actively ACCEPTs the contract.
+    // Other freelancers can still apply.
 
     return contract;
   });
@@ -120,7 +108,7 @@ export const getUserContracts = async (userId, role) => {
  * Update contract terms (description and milestones)
  */
 export const updateContract = async (contractId, clientId, data) => {
-  const { description, milestones } = data;
+  const { description, milestones, startDate } = data;
 
   return await prisma.$transaction(async (tx) => {
     // 1. Verify contract ownership
@@ -143,7 +131,10 @@ export const updateContract = async (contractId, clientId, data) => {
     // 2. Update basic info
     const updatedContract = await tx.contract.update({
       where: { id: contractId },
-      data: { description },
+      data: { 
+        description,
+        ...(startDate && { startDate: new Date(startDate) })
+      },
       include: { milestones: true }
     });
 
@@ -212,7 +203,7 @@ export const respondToContract = async (contractId, freelancerId, action, remark
     // 1. Verify contract and freelancer
     const contract = await tx.contract.findUnique({
       where: { id: contractId },
-      include: { project: true }
+      include: { project: true, milestones: true }
     });
 
     if (!contract || contract.freelancerId !== freelancerId) {
@@ -237,18 +228,43 @@ export const respondToContract = async (contractId, freelancerId, action, remark
         }
       });
 
-      // 3. Create default Kanban columns
+      // 2.5 Mark project as IN_PROGRESS, rejecting other applicants
+      await tx.project.update({
+        where: { id: contract.projectId },
+        data: { status: "IN_PROGRESS" }
+      });
+
+      await tx.application.updateMany({
+        where: {
+          projectId: contract.projectId,
+          id: { not: contract.applicationId },
+          status: "PENDING",
+        },
+        data: { status: "REJECTED" },
+      });
+
+      // 3. Create default Kanban columns per milestone
       const defaultColumns = [
         "BackLog", "To-Do", "In Progress", "Testing", "Done", "Completed"
       ];
 
-      await tx.boardColumn.createMany({
-        data: defaultColumns.map((name, index) => ({
-          contractId,
-          name,
-          order: index
-        }))
+      const columnsData = [];
+      contract.milestones.forEach((m) => {
+        defaultColumns.forEach((name, index) => {
+          columnsData.push({
+            contractId,
+            milestoneId: m.id,
+            name,
+            order: index
+          });
+        });
       });
+
+      if (columnsData.length > 0) {
+        await tx.boardColumn.createMany({
+          data: columnsData
+        });
+      }
 
       return updatedContract;
     } else if (action === "REJECT") {

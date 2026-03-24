@@ -271,7 +271,7 @@ model Contract {
   totalAmount     Float
   paidAmount      Float          @default(0)
   remarks         String?        // Freelancer's rejection remarks
-  startDate       DateTime       @default(now())
+  startDate       DateTime?
   endDate         DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -290,12 +290,15 @@ model Contract {
 model BoardColumn {
   id              String   @id @default(uuid())
   contractId      String
+  milestoneId     String?
   name            String
+  color           String?  @default("slate")
   order           Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   contract        Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  milestone       Milestone? @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
   tasks           Task[]
 
   @@map("board_columns")
@@ -316,6 +319,8 @@ model Milestone {
   updatedAt       DateTime        @updatedAt
 
   contract        Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  boardColumns    BoardColumn[]
+  tasks           Task[]
 
   @@map("milestones")
 }
@@ -323,6 +328,7 @@ model Milestone {
 model Task {
   id              String   @id @default(uuid())
   contractId      String
+  milestoneId     String?
   columnId        String?
   title           String
   description     String?
@@ -332,6 +338,7 @@ model Task {
   updatedAt       DateTime @updatedAt
 
   contract        Contract     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  milestone       Milestone?   @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
   column          BoardColumn? @relation(fields: [columnId], references: [id], onDelete: SetNull)
 
   @@map("tasks")

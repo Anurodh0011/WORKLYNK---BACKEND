@@ -4,8 +4,20 @@ export const getBoardData = async (req, res) => {
   try {
     const contractId = req.params.contractId;
     const userId = req.user.id;
-    const board = await kanbanService.getBoardData(contractId, userId);
+    const milestoneId = req.query.milestoneId;
+    const board = await kanbanService.getBoardData(contractId, userId, milestoneId);
     res.status(200).json({ success: true, data: board });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const createColumn = async (req, res) => {
+  try {
+    const { contractId, milestoneId, name, color } = req.body;
+    const userId = req.user.id;
+    const column = await kanbanService.createColumn(contractId, milestoneId, name, color, userId);
+    res.status(201).json({ success: true, data: column });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }

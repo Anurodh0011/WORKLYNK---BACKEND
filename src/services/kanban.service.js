@@ -3,7 +3,7 @@ import prisma from "../prisma/client.js";
 /**
  * Get board data including columns and tasks
  */
-export const getBoardData = async (contractId, userId) => {
+export const getBoardData = async (contractId, userId, milestoneId) => {
   const contract = await prisma.contract.findUnique({
     where: { id: contractId },
     select: { 
@@ -19,8 +19,10 @@ export const getBoardData = async (contractId, userId) => {
     throw new Error("Unauthorized or contract not found");
   }
 
+  const activeMilestoneId = milestoneId || (contract.milestones.length > 0 ? contract.milestones[0].id : null);
+
   const columns = await prisma.boardColumn.findMany({
-    where: { contractId },
+    where: { contractId, milestoneId: activeMilestoneId },
     include: {
       tasks: {
         orderBy: { order: "asc" }
@@ -30,6 +32,38 @@ export const getBoardData = async (contractId, userId) => {
   });
 
   return { columns, contract };
+};
+
+/**
+ * Create a new column
+ */
+export const createColumn = async (contractId, milestoneId, name, color, userId) => {
+  const contract = await prisma.contract.findUnique({
+    where: { id: contractId }
+  });
+
+  if (!contract || (contract.clientId !== userId && contract.freelancerId !== userId)) {
+    throw new Error("Unauthorized or contract not found");
+  }
+
+  // Find max order for this milestone
+  const lastColumn = await prisma.boardColumn.findFirst({
+    where: { contractId, milestoneId },
+    orderBy: { order: "desc" }
+  });
+
+  const nextOrder = (lastColumn?.order ?? -1) + 1;
+
+  return await prisma.boardColumn.create({
+    data: {
+      contractId,
+      milestoneId,
+      name,
+      color: color || "slate",
+      order: nextOrder
+    },
+    include: { tasks: true }
+  });
 };
 
 /**
@@ -63,18 +97,23 @@ export const createTask = async (contractId, columnId, data, userId) => {
     throw new Error("Unauthorized or contract not found");
   }
 
-  // Find max order in the column
-  const lastTask = await prisma.task.findFirst({
-    where: { columnId },
-    orderBy: { order: "desc" }
+  // Find max order in the column and its milestone
+  const column = await prisma.boardColumn.findUnique({
+    where: { id: columnId },
+    include: {
+      tasks: { orderBy: { order: "desc" }, take: 1 }
+    }
   });
 
-  const nextOrder = (lastTask?.order ?? -1) + 1;
+  if (!column) throw new Error("Column not found");
+
+  const nextOrder = (column.tasks[0]?.order ?? -1) + 1;
 
   return await prisma.task.create({
     data: {
       contractId,
       columnId,
+      milestoneId: column.milestoneId,
       title: data.title,
       description: data.description,
       order: nextOrder
