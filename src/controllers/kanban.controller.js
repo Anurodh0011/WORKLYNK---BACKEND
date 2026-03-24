@@ -45,3 +45,25 @@ export const renameColumn = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+export const submitMilestone = async (req, res) => {
+  try {
+    const { milestoneId, contractId } = req.params;
+    const userId = req.user.id;
+    const milestone = await kanbanService.submitMilestone(milestoneId, contractId, req.body, userId);
+    res.status(200).json({ success: true, data: milestone });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const reviewMilestone = async (req, res) => {
+  try {
+    const { milestoneId, contractId } = req.params;
+    const userId = req.user.id;
+    const milestone = await kanbanService.reviewMilestone(milestoneId, contractId, req.body, userId);
+    res.status(200).json({ success: true, data: milestone });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};

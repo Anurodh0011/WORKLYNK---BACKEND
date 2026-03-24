@@ -10,7 +10,8 @@ export const getBoardData = async (contractId, userId) => {
       id: true, 
       clientId: true, 
       freelancerId: true, 
-      project: { select: { title: true } } 
+      project: { select: { title: true } },
+      milestones: { orderBy: { createdAt: "asc" } }
     }
   });
 
@@ -132,5 +133,48 @@ export const moveTask = async (taskId, targetColumnId, newOrder, userId) => {
         order: newOrder
       }
     });
+  });
+};
+
+/**
+ * Submit a milestone for review (Freelancer)
+ */
+export const submitMilestone = async (milestoneId, contractId, data, userId) => {
+  const contract = await prisma.contract.findUnique({ where: { id: contractId } });
+  if (!contract || contract.freelancerId !== userId) {
+    throw new Error("Unauthorized");
+  }
+
+  return await prisma.milestone.update({
+    where: { id: milestoneId, contractId },
+    data: {
+      status: "IN_REVIEW",
+      freelancerNotes: data.notes || null,
+      completedAt: new Date()
+    }
+  });
+};
+
+/**
+ * Review and provide feedback for a milestone (Client)
+ */
+export const reviewMilestone = async (milestoneId, contractId, data, userId) => {
+  const contract = await prisma.contract.findUnique({ where: { id: contractId } });
+  if (!contract || contract.clientId !== userId) {
+    throw new Error("Unauthorized");
+  }
+
+  const { status, feedback } = data;
+  if (!["PAID", "PENDING"].includes(status)) {
+    throw new Error("Invalid status. Use PAID (Approve) or PENDING (Reject/Feedback).");
+  }
+
+  return await prisma.milestone.update({
+    where: { id: milestoneId, contractId },
+    data: {
+      status,
+      clientFeedback: feedback || null,
+      completedAt: status === "PENDING" ? null : undefined
+    }
   });
 };

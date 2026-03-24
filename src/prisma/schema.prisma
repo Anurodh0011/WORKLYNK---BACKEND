@@ -308,6 +308,8 @@ model Milestone {
   description     String?
   amount          Float
   status          MilestoneStatus @default(PENDING)
+  clientFeedback  String?
+  freelancerNotes String?
   dueDate         DateTime?
   completedAt     DateTime?
   createdAt       DateTime        @default(now())
