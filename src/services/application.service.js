@@ -80,6 +80,7 @@ export const getProjectApplications = async (projectId, clientId) => {
           profile: true,
         },
       },
+      contract: true,
     },
     orderBy: { createdAt: "desc" },
   });

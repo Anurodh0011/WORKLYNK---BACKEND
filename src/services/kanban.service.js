@@ -246,13 +246,37 @@ export const reviewMilestone = async (milestoneId, contractId, data, userId) => 
     throw new Error("Invalid status. Use PAID (Approve) or PENDING (Reject/Feedback).");
   }
 
-  return await prisma.milestone.update({
-    where: { id: milestoneId, contractId },
-    data: {
-      status,
-      clientFeedback: feedback || null,
-      completedAt: status === "PENDING" ? null : undefined
+  return await prisma.$transaction(async (tx) => {
+    const updatedMilestone = await tx.milestone.update({
+      where: { id: milestoneId, contractId },
+      data: {
+        status,
+        clientFeedback: feedback || null,
+        completedAt: status === "PENDING" ? null : undefined
+      }
+    });
+
+    if (status === "PAID") {
+      // Check if this was the last milestone needed
+      const allMilestones = await tx.milestone.findMany({
+        where: { contractId }
+      });
+      const allPaid = allMilestones.every(m => m.status === "PAID");
+
+      if (allPaid) {
+        await tx.contract.update({
+          where: { id: contractId },
+          data: { status: "COMPLETED" }
+        });
+        
+        await tx.project.update({
+          where: { id: contract.projectId },
+          data: { status: "COMPLETED" }
+        });
+      }
     }
+
+    return updatedMilestone;
   });
 };
 
