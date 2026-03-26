@@ -21,7 +21,7 @@ export const getBoardData = async (contractId, userId, milestoneId) => {
 
   const activeMilestoneId = milestoneId || (contract.milestones.length > 0 ? contract.milestones[0].id : null);
 
-  const columns = await prisma.boardColumn.findMany({
+  let columns = await prisma.boardColumn.findMany({
     where: { contractId, milestoneId: activeMilestoneId },
     include: {
       tasks: {
@@ -30,6 +30,44 @@ export const getBoardData = async (contractId, userId, milestoneId) => {
     },
     orderBy: { order: "asc" }
   });
+
+  // Create default columns if none exist
+  if (columns.length === 0 && activeMilestoneId) {
+    const defaultColumns = [
+      { name: "Backlog", color: "slate" },
+      { name: "To Do", color: "blue" },
+      { name: "In Progress", color: "amber" },
+      { name: "Done", color: "green" },
+      { name: "On Test", color: "purple" },
+      { name: "Testing", color: "red" },
+      { name: "Completed", color: "green" }
+    ];
+
+    await prisma.$transaction(
+      defaultColumns.map((col, index) =>
+        prisma.boardColumn.create({
+          data: {
+            contractId,
+            milestoneId: activeMilestoneId,
+            name: col.name,
+            color: col.color,
+            order: index
+          }
+        })
+      )
+    );
+
+    // Fetch again
+    columns = await prisma.boardColumn.findMany({
+      where: { contractId, milestoneId: activeMilestoneId },
+      include: {
+        tasks: {
+          orderBy: { order: "asc" }
+        }
+      },
+      orderBy: { order: "asc" }
+    });
+  }
 
   return { columns, contract };
 };
@@ -215,5 +253,67 @@ export const reviewMilestone = async (milestoneId, contractId, data, userId) => 
       clientFeedback: feedback || null,
       completedAt: status === "PENDING" ? null : undefined
     }
+  });
+};
+
+/**
+ * Move column to a new order
+ */
+export const moveColumn = async (columnId, newOrder, userId) => {
+  return await prisma.$transaction(async (tx) => {
+    const column = await tx.boardColumn.findUnique({
+      where: { id: columnId },
+      include: { contract: true }
+    });
+
+    if (!column || (column.contract.clientId !== userId && column.contract.freelancerId !== userId)) {
+      throw new Error("Unauthorized or column not found");
+    }
+
+    const oldOrder = column.order;
+    const milestoneId = column.milestoneId;
+    const contractId = column.contractId;
+
+    if (oldOrder === newOrder) return column;
+
+    if (oldOrder < newOrder) {
+      await tx.boardColumn.updateMany({
+        where: { contractId, milestoneId, order: { gt: oldOrder, lte: newOrder } },
+        data: { order: { decrement: 1 } }
+      });
+    } else {
+      await tx.boardColumn.updateMany({
+        where: { contractId, milestoneId, order: { gte: newOrder, lt: oldOrder } },
+        data: { order: { increment: 1 } }
+      });
+    }
+
+    return await tx.boardColumn.update({
+      where: { id: columnId },
+      data: { order: newOrder }
+    });
+  });
+};
+
+/**
+ * Delete a column
+ */
+export const deleteColumn = async (columnId, userId) => {
+  const column = await prisma.boardColumn.findUnique({
+    where: { id: columnId },
+    include: { contract: true }
+  });
+
+  if (!column || (column.contract.clientId !== userId && column.contract.freelancerId !== userId)) {
+    throw new Error("Unauthorized or column not found");
+  }
+
+  // Delete tasks logically required if not cascaded by DB schema
+  await prisma.task.deleteMany({
+    where: { columnId }
+  });
+
+  return await prisma.boardColumn.delete({
+    where: { id: columnId }
   });
 };

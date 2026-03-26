@@ -79,3 +79,26 @@ export const reviewMilestone = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+export const moveColumn = async (req, res) => {
+  try {
+    const columnId = req.params.columnId;
+    const { newOrder } = req.body;
+    const userId = req.user.id;
+    const column = await kanbanService.moveColumn(columnId, newOrder, userId);
+    res.status(200).json({ success: true, data: column });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteColumn = async (req, res) => {
+  try {
+    const columnId = req.params.columnId;
+    const userId = req.user.id;
+    await kanbanService.deleteColumn(columnId, userId);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
