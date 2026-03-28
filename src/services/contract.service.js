@@ -281,3 +281,46 @@ export const respondToContract = async (contractId, freelancerId, action, remark
     }
   });
 };
+
+/**
+ * Freelancer marks contract as complete after all milestones are paid
+ */
+export const completeContract = async (contractId, freelancerId) => {
+  return await prisma.$transaction(async (tx) => {
+    const contract = await tx.contract.findUnique({
+      where: { id: contractId },
+      include: { milestones: true }
+    });
+
+    if (!contract || contract.freelancerId !== freelancerId) {
+      const error = new Error("Unauthorized or contract not found");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (contract.status !== "ACTIVE") {
+      const error = new Error("Only active contracts can be completed");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const allPaid = contract.milestones.every(m => m.status === "PAID");
+    if (!allPaid || contract.milestones.length === 0) {
+      const error = new Error("Cannot complete contract until all milestones are paid by the client");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const updatedContract = await tx.contract.update({
+      where: { id: contractId },
+      data: { status: "COMPLETED", endDate: new Date() }
+    });
+
+    await tx.project.update({
+      where: { id: contract.projectId },
+      data: { status: "COMPLETED" }
+    });
+
+    return updatedContract;
+  });
+};
