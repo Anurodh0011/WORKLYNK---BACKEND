@@ -1,5 +1,6 @@
 import express from "express";
 import * as applicationController from "../controllers/application.controller.js";
+import * as contractController from "../controllers/contract.controller.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { authorize } from "../middleware/authorize.js";
 import { validate } from "../middleware/validate.js";
@@ -42,6 +43,14 @@ router.patch(
   updateApplicationStatusValidator,
   validate,
   applicationController.updateStatus
+);
+
+// Accept application and create contract (CLIENT who owns the project)
+router.post(
+  "/:applicationId/accept",
+  authenticate,
+  authorize("CLIENT"),
+  contractController.acceptApplication
 );
 
 export default router;

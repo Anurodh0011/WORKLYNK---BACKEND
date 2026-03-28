@@ -207,6 +207,18 @@ export async function getClientProjects(clientId) {
     include: {
       _count: {
         select: { applications: true }
+      },
+      contracts: {
+        select: {
+          id: true,
+          status: true,
+          milestones: {
+            select: { id: true, title: true, status: true },
+            orderBy: { createdAt: "asc" }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 1
       }
     }
   });

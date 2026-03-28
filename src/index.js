@@ -18,6 +18,8 @@ import profileRouter from "./routes/profile.routes.js";
 import projectRouter from "./routes/project.routes.js";
 import applicationRouter from "./routes/application.routes.js";
 import bookmarkRouter from "./routes/bookmark.routes.js";
+import contractRouter from "./routes/contract.routes.js";
+import kanbanRouter from "./routes/kanban.routes.js";
 
 const app = express();
 
@@ -49,6 +51,8 @@ app.use("/api/profile", profileRouter);
 app.use("/api/projects", projectRouter);
 app.use("/api/applications", applicationRouter);
 app.use("/api/bookmarks", bookmarkRouter);
+app.use("/api/contracts", contractRouter);
+app.use("/api/kanban", kanbanRouter);
 
 // ── 404 Handler ──────────────────────────────────────────
 app.use((req, res) => {

@@ -80,6 +80,7 @@ export const getProjectApplications = async (projectId, clientId) => {
           profile: true,
         },
       },
+      contract: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -99,6 +100,12 @@ export const getUserApplications = async (freelancerId) => {
           budgetMax: true,
         },
       },
+      contract: {
+        select: {
+          id: true,
+          status: true,
+        }
+      }
     },
     orderBy: { createdAt: "desc" },
   });
