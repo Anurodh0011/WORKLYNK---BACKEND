@@ -1,5 +1,6 @@
 import express from "express";
 import * as contractController from "../controllers/contract.controller.js";
+import * as reviewController from "../controllers/review.controller.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { authorize } from "../middleware/authorize.js";
 
@@ -41,6 +42,14 @@ router.post(
   authenticate,
   authorize("FREELANCER"),
   contractController.respondToContract
+);
+
+// Freelancer marks project as complete (Requires all milestones to be PAID)
+router.post(
+  "/:contractId/complete",
+  authenticate,
+  authorize("FREELANCER"),
+  reviewController.completeContractTrigger
 );
 
 export default router;
