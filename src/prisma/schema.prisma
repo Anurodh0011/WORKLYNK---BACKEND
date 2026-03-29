@@ -343,3 +343,18 @@ model Task {
 
   @@map("tasks")
 }
+
+// ─── Review Model ─────────────────────────────────────────
+model Review {
+  id              String   @id @default(uuid())
+  contractId      String   @unique
+  reviewerId      String
+  revieweeId      String
+  rating          Int      // 1-5
+  comment         String?
+  createdAt       DateTime @default(now())
+
+  contract        Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  
+  @@map("reviews")
+}
