@@ -7,18 +7,19 @@ import prisma from "../prisma/client.js";
  */
 export const submitReview = async (req, res) => {
   try {
-    const { contractId, rating, comment } = req.body;
+    const { contractId, comment } = req.body;
+    const rating = parseInt(req.body.rating, 10);
     const reviewerId = req.user.id;
     
     // Server-side validation
-    if (!contractId || !rating || rating < 1 || rating > 5) {
+    if (!contractId || isNaN(rating) || rating < 1 || rating > 5) {
       return res.status(400).json({ 
         success: false, 
         message: "Invalid review parameters. Required: contractId, rating (1-5)." 
       });
     }
 
-    const review = await reviewService.createReview(contractId, reviewerId, rating, comment);
+    const review = await reviewService.createReview(contractId, reviewerId, rating, comment?.trim());
     
     return successResponse(res, "Review submitted successfully", review);
   } catch (error) {

@@ -283,6 +283,7 @@ model Contract {
   milestones      Milestone[]
   tasks           Task[]
   boardColumns    BoardColumn[]
+  review          Review?
 
   @@map("contracts")
 }
