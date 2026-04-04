@@ -6,11 +6,23 @@ export const getProfileByUserId = async (userId) => {
     where: { userId },
     include: {
       user: {
-        select: { phoneNumber: true, name: true, email: true }
+        select: { 
+          phoneNumber: true, 
+          name: true, 
+          email: true,
+          clientContracts: {
+            where: { status: { in: ["ACTIVE", "COMPLETED"] } },
+            include: { project: { select: { title: true } } }
+          },
+          freelancerContracts: {
+            where: { status: { in: ["ACTIVE", "COMPLETED"] } },
+            include: { project: { select: { title: true } } }
+          }
+        }
       }
     }
   });
-  
+
   if (!profile) {
     profile = await prisma.profile.create({
       data: { userId },

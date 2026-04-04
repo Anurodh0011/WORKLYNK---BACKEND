@@ -257,23 +257,7 @@ export const reviewMilestone = async (milestoneId, contractId, data, userId) => 
     });
 
     if (status === "PAID") {
-      // Check if this was the last milestone needed
-      const allMilestones = await tx.milestone.findMany({
-        where: { contractId }
-      });
-      const allPaid = allMilestones.every(m => m.status === "PAID");
-
-      if (allPaid) {
-        await tx.contract.update({
-          where: { id: contractId },
-          data: { status: "COMPLETED" }
-        });
-        
-        await tx.project.update({
-          where: { id: contract.projectId },
-          data: { status: "COMPLETED" }
-        });
-      }
+      // Logic moved to explicit freelancer completion endpoint
     }
 
     return updatedMilestone;
