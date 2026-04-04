@@ -43,4 +43,12 @@ router.post(
   contractController.respondToContract
 );
 
+// Complete contract (Freelancer only)
+router.post(
+  "/:id/complete",
+  authenticate,
+  authorize("FREELANCER"),
+  contractController.completeContract
+);
+
 export default router;

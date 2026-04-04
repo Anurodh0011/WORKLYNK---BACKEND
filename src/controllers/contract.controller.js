@@ -113,3 +113,23 @@ export const respondToContract = async (req, res) => {
     res.status(error.statusCode || 400).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * Freelancer response to contract offer
+ */
+export const completeContract = async (req, res) => {
+  try {
+    const contractId = req.params.id;
+    const freelancerId = req.user.id;
+
+    const contract = await contractService.completeContract(contractId, freelancerId);
+
+    res.status(200).json({
+      success: true,
+      message: `Contract marked as completed successfully`,
+      data: contract,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+};
