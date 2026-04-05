@@ -105,6 +105,10 @@ model User {
   savedFreelancers    SavedFreelancer[] @relation("ClientSavedFreelancers")
   savedByClients      SavedFreelancer[] @relation("FreelancerSavedByClients")
 
+  // Reviews Relations
+  reviewsGiven        Review[] @relation("ReviewerReviews")
+  reviewsReceived     Review[] @relation("RevieweeReviews")
+
   @@map("users")
 }
 
@@ -384,6 +388,8 @@ model Review {
   createdAt       DateTime @default(now())
 
   contract        Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  reviewer        User     @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee        User     @relation("RevieweeReviews", fields: [revieweeId], references: [id], onDelete: Cascade)
   
   @@map("reviews")
 }

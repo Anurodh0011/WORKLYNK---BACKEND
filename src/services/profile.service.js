@@ -17,6 +17,14 @@ export const getProfileByUserId = async (userId) => {
           contractsAsFreelancer: {
             where: { status: { in: ["ACTIVE", "COMPLETED"] } },
             include: { project: { select: { title: true } } }
+          },
+          reviewsReceived: {
+            include: {
+              reviewer: {
+                select: { name: true, profile: { select: { profilePicture: true } } }
+              }
+            },
+            orderBy: { createdAt: "desc" }
           }
         }
       }
@@ -28,7 +36,15 @@ export const getProfileByUserId = async (userId) => {
       data: { userId },
     });
   }
-  return profile;
+
+  // Calculate average rating
+  let averageRating = 0;
+  if (profile.user?.reviewsReceived && profile.user.reviewsReceived.length > 0) {
+    const total = profile.user.reviewsReceived.reduce((acc, r) => acc + r.rating, 0);
+    averageRating = Number((total / profile.user.reviewsReceived.length).toFixed(1));
+  }
+
+  return { ...profile, averageRating };
 };
 
 // Fetch public profile by userId including reviews

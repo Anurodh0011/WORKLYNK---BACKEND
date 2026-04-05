@@ -32,6 +32,7 @@ app.use(cors({
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
+app.use("/uploads", express.static("uploads"));
 
 // ── Health Check ─────────────────────────────────────────
 app.get("/", (req, res) => {

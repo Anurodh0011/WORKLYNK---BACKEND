@@ -8,7 +8,7 @@ const router = Router();
 
 // Routes for logged in users (CLIENT, FREELANCER, ADMIN)
 router.get("/", authenticate, profileController.getMyProfile);
-router.put("/", authenticate, profileController.updateProfile);
+router.put("/", authenticate, upload.single('profilePicture'), profileController.updateProfile);
 router.post("/verify", authenticate, upload.single('documentImage'), profileController.submitVerification);
 
 // Public route for viewing any profile
