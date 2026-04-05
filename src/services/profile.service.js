@@ -31,6 +31,51 @@ export const getProfileByUserId = async (userId) => {
   return profile;
 };
 
+// Fetch public profile by userId including reviews
+export const getPublicProfileByUserId = async (userId) => {
+  const profile = await prisma.profile.findUnique({
+    where: { userId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          clientContracts: {
+            where: { status: { in: ["COMPLETED"] } },
+            include: { project: { select: { title: true } } }
+          },
+          freelancerContracts: {
+            where: { status: { in: ["COMPLETED"] } },
+            include: { project: { select: { title: true } } }
+          },
+          reviewsReceived: {
+            include: {
+              reviewer: {
+                select: { name: true, profile: { select: { profilePicture: true } } }
+              }
+            },
+            orderBy: { createdAt: "desc" }
+          }
+        }
+      }
+    }
+  });
+
+  if (!profile) {
+    throw new Error("Profile not found");
+  }
+
+  // Calculate average rating
+  let averageRating = 0;
+  if (profile.user.reviewsReceived && profile.user.reviewsReceived.length > 0) {
+    const total = profile.user.reviewsReceived.reduce((acc, r) => acc + r.rating, 0);
+    averageRating = Number((total / profile.user.reviewsReceived.length).toFixed(1));
+  }
+
+  return { ...profile, averageRating };
+};
+
 // Update profile basic info
 export const updateProfileInfo = async (userId, data) => {
   const { profilePicture, description, skills, education, experience, portfolio, hourlyRate, headline, certifications } = data;

@@ -7,6 +7,7 @@ const router = express.Router();
 router.get("/:contractId", authenticate, kanbanController.getBoardData);
 router.post("/tasks", authenticate, kanbanController.createTask);
 router.patch("/tasks/:taskId/move", authenticate, kanbanController.moveTask);
+router.post("/tasks/:taskId/feedback", authenticate, kanbanController.addTaskFeedback);
 router.post("/columns", authenticate, kanbanController.createColumn);
 router.patch("/columns/:columnId", authenticate, kanbanController.renameColumn);
 router.patch("/columns/:columnId/move", authenticate, kanbanController.moveColumn);
@@ -14,5 +15,6 @@ router.post("/columns/:columnId/feedback", authenticate, kanbanController.addCol
 router.delete("/columns/:columnId", authenticate, kanbanController.deleteColumn);
 router.post("/contracts/:contractId/milestones/:milestoneId/submit", authenticate, kanbanController.submitMilestone);
 router.post("/contracts/:contractId/milestones/:milestoneId/review", authenticate, kanbanController.reviewMilestone);
+router.post("/contracts/:contractId/milestones/:milestoneId/confirm-payment", authenticate, kanbanController.confirmPayment);
 
 export default router;

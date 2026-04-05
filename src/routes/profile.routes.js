@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate } from "../middleware/authenticate.js";
+import { authenticate, tryAuthenticate } from "../middleware/authenticate.js";
 import { authorize } from "../middleware/authorize.js";
 import * as profileController from "../controllers/profile.controller.js";
 import upload from "../middleware/multer.js";
@@ -10,6 +10,9 @@ const router = Router();
 router.get("/", authenticate, profileController.getMyProfile);
 router.put("/", authenticate, profileController.updateProfile);
 router.post("/verify", authenticate, upload.single('documentImage'), profileController.submitVerification);
+
+// Public route for viewing any profile
+router.get("/public/:userId", tryAuthenticate, profileController.getPublicProfile);
 
 // Admin Routes for Verifying PAN/VAT
 router.get("/all", authenticate, authorize("ADMIN"), profileController.getAllProfiles);
