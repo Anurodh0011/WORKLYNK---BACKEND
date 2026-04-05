@@ -11,7 +11,9 @@ export const getBoardData = async (contractId, userId, milestoneId) => {
       clientId: true, 
       freelancerId: true, 
       project: { select: { title: true } },
-      milestones: { orderBy: { createdAt: "asc" } }
+      milestones: { orderBy: { createdAt: "asc" } },
+      client: { select: { id: true, name: true, email: true, profile: { select: { profilePicture: true } } } },
+      freelancer: { select: { id: true, name: true, email: true, profile: { select: { profilePicture: true } } } }
     }
   });
 
