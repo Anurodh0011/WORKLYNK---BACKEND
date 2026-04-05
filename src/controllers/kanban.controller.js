@@ -104,6 +104,17 @@ export const reviewMilestone = async (req, res) => {
   }
 };
 
+export const confirmPayment = async (req, res) => {
+  try {
+    const { milestoneId, contractId } = req.params;
+    const userId = req.user.id;
+    const milestone = await kanbanService.confirmPayment(milestoneId, contractId, userId);
+    res.status(200).json({ success: true, data: milestone });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const moveColumn = async (req, res) => {
   try {
     const columnId = req.params.columnId;

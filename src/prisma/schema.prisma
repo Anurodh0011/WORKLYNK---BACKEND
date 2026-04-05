@@ -74,6 +74,7 @@ enum ContractStatus {
 enum MilestoneStatus {
   PENDING
   IN_REVIEW
+  AWAITING_PAYMENT
   PAID
   CANCELLED
 }

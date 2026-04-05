@@ -299,8 +299,9 @@ export const reviewMilestone = async (milestoneId, contractId, data, userId) => 
   }
 
   const { status, feedback } = data;
-  if (!["PAID", "PENDING"].includes(status)) {
-    throw new Error("Invalid status. Use PAID (Approve) or PENDING (Reject/Feedback).");
+  // Client can either send feedback (PENDING) or approve+pay (AWAITING_PAYMENT)
+  if (!["AWAITING_PAYMENT", "PENDING"].includes(status)) {
+    throw new Error("Invalid status. Use AWAITING_PAYMENT (Approve) or PENDING (Reject/Feedback).");
   }
 
   return await prisma.$transaction(async (tx) => {
@@ -312,12 +313,34 @@ export const reviewMilestone = async (milestoneId, contractId, data, userId) => 
         completedAt: status === "PENDING" ? null : undefined
       }
     });
-
-    if (status === "PAID") {
-      // Logic moved to explicit freelancer completion endpoint
-    }
-
     return updatedMilestone;
+  });
+};
+
+/**
+ * Confirm payment received (Freelancer) — moves AWAITING_PAYMENT → PAID
+ */
+export const confirmPayment = async (milestoneId, contractId, userId) => {
+  const contract = await prisma.contract.findUnique({ where: { id: contractId } });
+  if (!contract || contract.freelancerId !== userId) {
+    throw new Error("Unauthorized: Only the freelancer can confirm payment receipt");
+  }
+
+  const milestone = await prisma.milestone.findUnique({
+    where: { id: milestoneId, contractId }
+  });
+
+  if (!milestone) throw new Error("Milestone not found");
+  if (milestone.status !== "AWAITING_PAYMENT") {
+    throw new Error("Milestone is not awaiting payment confirmation");
+  }
+
+  return await prisma.milestone.update({
+    where: { id: milestoneId, contractId },
+    data: {
+      status: "PAID",
+      completedAt: new Date()
+    }
   });
 };
 

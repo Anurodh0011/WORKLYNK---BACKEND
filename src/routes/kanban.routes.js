@@ -15,5 +15,6 @@ router.post("/columns/:columnId/feedback", authenticate, kanbanController.addCol
 router.delete("/columns/:columnId", authenticate, kanbanController.deleteColumn);
 router.post("/contracts/:contractId/milestones/:milestoneId/submit", authenticate, kanbanController.submitMilestone);
 router.post("/contracts/:contractId/milestones/:milestoneId/review", authenticate, kanbanController.reviewMilestone);
+router.post("/contracts/:contractId/milestones/:milestoneId/confirm-payment", authenticate, kanbanController.confirmPayment);
 
 export default router;
