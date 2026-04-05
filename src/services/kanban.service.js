@@ -150,25 +150,6 @@ export const addColumnFeedback = async (columnId, content, userId) => {
 };
 
 /**
- * Update task client feedback
- */
-export const updateTaskFeedback = async (taskId, feedback, userId) => {
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
-    include: { contract: true }
-  });
-
-  if (!task || task.contract.clientId !== userId) {
-    throw new Error("Unauthorized: Only client can add task feedback");
-  }
-
-  return await prisma.task.update({
-    where: { id: taskId },
-    data: { clientFeedback: feedback }
-  });
-};
-
-/**
  * Create a new task in a column
  */
 export const createTask = async (contractId, columnId, data, userId) => {

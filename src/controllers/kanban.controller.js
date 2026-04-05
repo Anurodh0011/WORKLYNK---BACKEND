@@ -46,18 +46,6 @@ export const moveTask = async (req, res) => {
   }
 };
 
-export const updateTaskFeedback = async (req, res) => {
-  try {
-    const taskId = req.params.taskId;
-    const { feedback } = req.body;
-    const userId = req.user.id;
-    const task = await kanbanService.updateTaskFeedback(taskId, feedback, userId);
-    res.status(200).json({ success: true, data: task });
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
-  }
-};
-
 export const renameColumn = async (req, res) => {
   try {
     const columnId = req.params.columnId;
