@@ -54,7 +54,10 @@ export const completeContractTrigger = async (req, res) => {
 
     const updated = await prisma.contract.update({
       where: { id: contractId },
-      data: { status: "COMPLETED" },
+      data: { 
+        status: "COMPLETED",
+        endDate: new Date()
+      },
       include: { project: true }
     });
 

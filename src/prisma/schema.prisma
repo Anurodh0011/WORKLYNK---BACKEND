@@ -294,6 +294,7 @@ model BoardColumn {
   milestoneId     String?
   name            String
   color           String?  @default("slate")
+  clientFeedback  String?
   order           Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -333,6 +334,7 @@ model Task {
   columnId        String?
   title           String
   description     String?
+  clientFeedback  String?
   status          String   @default("TODO") // Legacy field, keeping for compatibility if needed, but columnId is primary
   order           Int      @default(0)
   createdAt       DateTime @default(now())
