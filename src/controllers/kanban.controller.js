@@ -70,6 +70,18 @@ export const addColumnFeedback = async (req, res) => {
   }
 };
 
+export const addTaskFeedback = async (req, res) => {
+  try {
+    const taskId = req.params.taskId;
+    const { content } = req.body;
+    const userId = req.user.id;
+    const feedback = await kanbanService.addTaskFeedback(taskId, content, userId);
+    res.status(201).json({ success: true, data: feedback });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const submitMilestone = async (req, res) => {
   try {
     const { milestoneId, contractId } = req.params;

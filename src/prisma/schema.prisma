@@ -355,8 +355,21 @@ model Task {
   contract        Contract     @relation(fields: [contractId], references: [id], onDelete: Cascade)
   milestone       Milestone?   @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
   column          BoardColumn? @relation(fields: [columnId], references: [id], onDelete: SetNull)
+  feedbacks       TaskFeedback[]
 
   @@map("tasks")
+}
+
+model TaskFeedback {
+  id              String   @id @default(uuid())
+  taskId          String
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_feedbacks")
 }
 
 // ─── Review Model ─────────────────────────────────────────

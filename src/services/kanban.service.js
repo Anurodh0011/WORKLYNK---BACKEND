@@ -24,6 +24,11 @@ export const getBoardData = async (contractId, userId, milestoneId) => {
     where: { contractId, milestoneId: activeMilestoneId },
     include: {
       tasks: {
+        include: {
+          feedbacks: {
+            orderBy: { createdAt: "asc" }
+          }
+        },
         orderBy: { order: "asc" }
       },
       feedbacks: {
@@ -63,12 +68,17 @@ export const getBoardData = async (contractId, userId, milestoneId) => {
     columns = await prisma.boardColumn.findMany({
       where: { contractId, milestoneId: activeMilestoneId },
       include: {
-        tasks: {
-          orderBy: { order: "asc" }
+      tasks: {
+        include: {
+          feedbacks: {
+            orderBy: { createdAt: "asc" }
+          }
         },
-        feedbacks: {
-          orderBy: { createdAt: "asc" }
-        }
+        orderBy: { order: "asc" }
+      },
+      feedbacks: {
+        orderBy: { createdAt: "asc" }
+      }
       },
       orderBy: { order: "asc" }
     });
@@ -144,6 +154,27 @@ export const addColumnFeedback = async (columnId, content, userId) => {
   return await prisma.columnFeedback.create({
     data: { 
       columnId,
+      content 
+    }
+  });
+};
+
+/**
+ * Create task client feedback
+ */
+export const addTaskFeedback = async (taskId, content, userId) => {
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: { contract: true }
+  });
+
+  if (!task || task.contract.clientId !== userId) {
+    throw new Error("Unauthorized: Only client can add task feedback");
+  }
+
+  return await prisma.taskFeedback.create({
+    data: { 
+      taskId,
       content 
     }
   });
