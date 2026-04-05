@@ -10,11 +10,11 @@ export const getProfileByUserId = async (userId) => {
           phoneNumber: true, 
           name: true, 
           email: true,
-          clientContracts: {
+          contractsAsClient: {
             where: { status: { in: ["ACTIVE", "COMPLETED"] } },
             include: { project: { select: { title: true } } }
           },
-          freelancerContracts: {
+          contractsAsFreelancer: {
             where: { status: { in: ["ACTIVE", "COMPLETED"] } },
             include: { project: { select: { title: true } } }
           }
@@ -41,11 +41,11 @@ export const getPublicProfileByUserId = async (userId) => {
           id: true,
           name: true,
           role: true,
-          clientContracts: {
+          contractsAsClient: {
             where: { status: { in: ["COMPLETED"] } },
             include: { project: { select: { title: true } } }
           },
-          freelancerContracts: {
+          contractsAsFreelancer: {
             where: { status: { in: ["COMPLETED"] } },
             include: { project: { select: { title: true } } }
           },
