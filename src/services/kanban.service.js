@@ -6,10 +6,7 @@ import prisma from "../prisma/client.js";
 export const getBoardData = async (contractId, userId, milestoneId) => {
   const contract = await prisma.contract.findUnique({
     where: { id: contractId },
-    select: { 
-      id: true, 
-      clientId: true, 
-      freelancerId: true, 
+    include: { 
       project: { select: { title: true } },
       milestones: { orderBy: { createdAt: "asc" } },
       client: { select: { id: true, name: true, email: true, profile: { select: { profilePicture: true } } } },
