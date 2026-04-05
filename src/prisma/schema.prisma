@@ -302,8 +302,21 @@ model BoardColumn {
   contract        Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
   milestone       Milestone? @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
   tasks           Task[]
+  feedbacks       ColumnFeedback[]
 
   @@map("board_columns")
+}
+
+model ColumnFeedback {
+  id              String   @id @default(uuid())
+  columnId        String
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  column          BoardColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+
+  @@map("column_feedbacks")
 }
 
 model Milestone {

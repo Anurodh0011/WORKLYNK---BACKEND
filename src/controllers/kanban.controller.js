@@ -70,13 +70,13 @@ export const renameColumn = async (req, res) => {
   }
 };
 
-export const updateColumnFeedback = async (req, res) => {
+export const addColumnFeedback = async (req, res) => {
   try {
     const columnId = req.params.columnId;
-    const { feedback } = req.body;
+    const { content } = req.body;
     const userId = req.user.id;
-    const column = await kanbanService.updateColumnFeedback(columnId, feedback, userId);
-    res.status(200).json({ success: true, data: column });
+    const feedback = await kanbanService.addColumnFeedback(columnId, content, userId);
+    res.status(201).json({ success: true, data: feedback });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }

@@ -25,6 +25,9 @@ export const getBoardData = async (contractId, userId, milestoneId) => {
     include: {
       tasks: {
         orderBy: { order: "asc" }
+      },
+      feedbacks: {
+        orderBy: { createdAt: "asc" }
       }
     },
     orderBy: { order: "asc" }
@@ -62,6 +65,9 @@ export const getBoardData = async (contractId, userId, milestoneId) => {
       include: {
         tasks: {
           orderBy: { order: "asc" }
+        },
+        feedbacks: {
+          orderBy: { createdAt: "asc" }
         }
       },
       orderBy: { order: "asc" }
@@ -123,9 +129,9 @@ export const renameColumn = async (columnId, name, userId) => {
 };
 
 /**
- * Update column client feedback
+ * Create column client feedback
  */
-export const updateColumnFeedback = async (columnId, feedback, userId) => {
+export const addColumnFeedback = async (columnId, content, userId) => {
   const column = await prisma.boardColumn.findUnique({
     where: { id: columnId },
     include: { contract: true }
@@ -135,9 +141,11 @@ export const updateColumnFeedback = async (columnId, feedback, userId) => {
     throw new Error("Unauthorized: Only client can add column feedback");
   }
 
-  return await prisma.boardColumn.update({
-    where: { id: columnId },
-    data: { clientFeedback: feedback }
+  return await prisma.columnFeedback.create({
+    data: { 
+      columnId,
+      content 
+    }
   });
 };
 

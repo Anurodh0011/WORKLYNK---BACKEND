@@ -11,7 +11,7 @@ router.patch("/tasks/:taskId/feedback", authenticate, kanbanController.updateTas
 router.post("/columns", authenticate, kanbanController.createColumn);
 router.patch("/columns/:columnId", authenticate, kanbanController.renameColumn);
 router.patch("/columns/:columnId/move", authenticate, kanbanController.moveColumn);
-router.patch("/columns/:columnId/feedback", authenticate, kanbanController.updateColumnFeedback);
+router.post("/columns/:columnId/feedback", authenticate, kanbanController.addColumnFeedback);
 router.delete("/columns/:columnId", authenticate, kanbanController.deleteColumn);
 router.post("/contracts/:contractId/milestones/:milestoneId/submit", authenticate, kanbanController.submitMilestone);
 router.post("/contracts/:contractId/milestones/:milestoneId/review", authenticate, kanbanController.reviewMilestone);
