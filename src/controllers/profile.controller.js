@@ -9,6 +9,7 @@ export const getMyProfile = async (req, res, next) => {
     const profile = await profileService.getProfileByUserId(req.user.id);
     return successResponse(res, "Profile fetched successfully", { profile });
   } catch (error) {
+    console.error("Error in getMyProfile:", error);
     next(error);
   }
 };
@@ -28,7 +29,11 @@ export const getPublicProfile = async (req, res, next) => {
 // @access  Private
 export const updateProfile = async (req, res, next) => {
   try {
-    const profile = await profileService.updateProfileInfo(req.user.id, req.body);
+    const updateData = { ...req.body };
+    if (req.file) {
+      updateData.profilePicture = req.file.path;
+    }
+    const profile = await profileService.updateProfileInfo(req.user.id, updateData);
     return successResponse(res, "Profile updated successfully", { profile });
   } catch (error) {
     next(error);
