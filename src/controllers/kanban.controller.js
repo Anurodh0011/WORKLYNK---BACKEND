@@ -58,6 +58,18 @@ export const renameColumn = async (req, res) => {
   }
 };
 
+export const addColumnFeedback = async (req, res) => {
+  try {
+    const columnId = req.params.columnId;
+    const { content } = req.body;
+    const userId = req.user.id;
+    const feedback = await kanbanService.addColumnFeedback(columnId, content, userId);
+    res.status(201).json({ success: true, data: feedback });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const submitMilestone = async (req, res) => {
   try {
     const { milestoneId, contractId } = req.params;

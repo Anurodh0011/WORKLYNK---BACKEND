@@ -6,12 +6,11 @@ import prisma from "../prisma/client.js";
 export const getBoardData = async (contractId, userId, milestoneId) => {
   const contract = await prisma.contract.findUnique({
     where: { id: contractId },
-    select: { 
-      id: true, 
-      clientId: true, 
-      freelancerId: true, 
+    include: { 
       project: { select: { title: true } },
-      milestones: { orderBy: { createdAt: "asc" } }
+      milestones: { orderBy: { createdAt: "asc" } },
+      client: { select: { id: true, name: true, email: true, profile: { select: { profilePicture: true } } } },
+      freelancer: { select: { id: true, name: true, email: true, profile: { select: { profilePicture: true } } } }
     }
   });
 
@@ -26,6 +25,9 @@ export const getBoardData = async (contractId, userId, milestoneId) => {
     include: {
       tasks: {
         orderBy: { order: "asc" }
+      },
+      feedbacks: {
+        orderBy: { createdAt: "asc" }
       }
     },
     orderBy: { order: "asc" }
@@ -63,6 +65,9 @@ export const getBoardData = async (contractId, userId, milestoneId) => {
       include: {
         tasks: {
           orderBy: { order: "asc" }
+        },
+        feedbacks: {
+          orderBy: { createdAt: "asc" }
         }
       },
       orderBy: { order: "asc" }
@@ -120,6 +125,27 @@ export const renameColumn = async (columnId, name, userId) => {
   return await prisma.boardColumn.update({
     where: { id: columnId },
     data: { name }
+  });
+};
+
+/**
+ * Create column client feedback
+ */
+export const addColumnFeedback = async (columnId, content, userId) => {
+  const column = await prisma.boardColumn.findUnique({
+    where: { id: columnId },
+    include: { contract: true }
+  });
+
+  if (!column || column.contract.clientId !== userId) {
+    throw new Error("Unauthorized: Only client can add column feedback");
+  }
+
+  return await prisma.columnFeedback.create({
+    data: { 
+      columnId,
+      content 
+    }
   });
 };
 
