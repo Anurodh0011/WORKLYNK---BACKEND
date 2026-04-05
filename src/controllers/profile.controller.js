@@ -13,6 +13,16 @@ export const getMyProfile = async (req, res, next) => {
   }
 };
 
+export const getPublicProfile = async (req, res, next) => {
+  try {
+    const userId = req.params.userId;
+    const profile = await profileService.getPublicProfileByUserId(userId);
+    return successResponse(res, "Public profile fetched successfully", { profile });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @route   PUT /api/profile
 // @desc    Update profile information
 // @access  Private

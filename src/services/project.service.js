@@ -118,6 +118,7 @@ export async function getProjects(filters = {}) {
     include: {
       client: {
         select: {
+          id: true,
           name: true,
           profile: {
             select: {
