@@ -407,7 +407,12 @@ adminRouter.get("/projects/:projectId", async (req, res, next) => {
         applications: {
           include: {
             freelancer: {
-              select: { id: true, name: true, email: true }
+              select: { 
+                id: true, 
+                name: true, 
+                email: true,
+                profile: { select: { profilePicture: true } }
+              }
             }
           },
           orderBy: { createdAt: "desc" }
@@ -415,7 +420,12 @@ adminRouter.get("/projects/:projectId", async (req, res, next) => {
         contracts: {
           include: {
             freelancer: {
-              select: { id: true, name: true, email: true }
+              select: { 
+                id: true, 
+                name: true, 
+                email: true,
+                profile: { select: { profilePicture: true } }
+              }
             }
           },
           orderBy: { createdAt: "desc" }
