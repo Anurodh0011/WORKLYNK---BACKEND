@@ -52,25 +52,32 @@ adminRouter.get("/users/metrics", async (req, res, next) => {
     });
 
     // 2. User registration trend (last 6 months) for line/bar chart
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const trendData = {};
+    
+    // Initialize last 6 months with 0s to ensure the chart always shows a trend line
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      trendData[key] = { name: key, CLIENT: 0, FREELANCER: 0, ADMIN: 0, total: 0 };
+    }
+
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     
     const recentUsers = await prisma.user.findMany({
       where: { createdAt: { gte: sixMonthsAgo } },
       select: { createdAt: true, role: true },
-      orderBy: { createdAt: "asc" }
     });
 
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const trendData = {};
     recentUsers.forEach(u => {
       const d = u.createdAt;
       const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-      if (!trendData[key]) {
-        trendData[key] = { name: key, CLIENT: 0, FREELANCER: 0, ADMIN: 0, total: 0 };
+      if (trendData[key]) {
+        trendData[key][u.role] = (trendData[key][u.role] || 0) + 1;
+        trendData[key].total += 1;
       }
-      trendData[key][u.role] = (trendData[key][u.role] || 0) + 1;
-      trendData[key].total += 1;
     });
 
     const registrationTrend = Object.values(trendData);
@@ -143,7 +150,11 @@ adminRouter.get("/users", async (req, res, next) => {
           status: true,
           createdAt: true,
           lastLoginAt: true,
-          _count: { select: { statusHistory: true } }
+          statusHistory: {
+            take: 1,
+            orderBy: { createdAt: "desc" },
+            select: { suspensionDuration: true }
+          }
         },
         orderBy: { createdAt: "desc" },
       }),
@@ -151,7 +162,10 @@ adminRouter.get("/users", async (req, res, next) => {
     ]);
 
     return successResponse(res, "Users retrieved", {
-      users,
+      users: users.map(u => ({
+        ...u,
+        suspensionDuration: u.statusHistory?.[0]?.suspensionDuration || null
+      })),
       pagination: {
         page,
         limit,
@@ -208,7 +222,7 @@ adminRouter.patch("/users/:userId/status", async (req, res, next) => {
         where: { id: userId },
         data: { 
           status,
-          // suspendedUntil: status === "SUSPENDED" ? suspendedUntil : null
+          suspendedUntil: status === "SUSPENDED" ? suspendedUntil : null
         },
         select: {
           id: true,
@@ -216,7 +230,7 @@ adminRouter.patch("/users/:userId/status", async (req, res, next) => {
           email: true,
           role: true,
           status: true,
-          // suspendedUntil: true
+          suspendedUntil: true
         },
       });
 
@@ -226,7 +240,7 @@ adminRouter.patch("/users/:userId/status", async (req, res, next) => {
           userId,
           status,
           remarks: remarks || "No remarks provided",
-          // suspensionDuration: status === "SUSPENDED" && suspensionDuration ? parseInt(suspensionDuration) : null,
+          suspensionDuration: status === "SUSPENDED" && suspensionDuration ? parseInt(suspensionDuration) : null,
           changedById: req.user.id,
         },
       });
@@ -243,7 +257,6 @@ adminRouter.patch("/users/:userId/status", async (req, res, next) => {
     }
 
     return successResponse(res, `User status updated to ${status}`, { user });
-
   } catch (error) {
     console.error("❌ ERROR: User status update failed:", error);
     next(error);
