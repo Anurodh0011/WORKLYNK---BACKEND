@@ -280,4 +280,157 @@ adminRouter.get("/users/:userId/status-history", async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/v1/admin/projects/metrics
+ * Project dashboard metrics
+ */
+adminRouter.get("/projects/metrics", async (req, res, next) => {
+  try {
+    // 1. Project status distribution
+    const statusDistribution = await prisma.project.groupBy({
+      by: ["status"],
+      _count: { id: true },
+    });
+
+    // 2. Project creation trend (last 6 months)
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const trendData = {};
+    
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      trendData[key] = { name: key, total: 0 };
+    }
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    const recentProjects = await prisma.project.findMany({
+      where: { createdAt: { gte: sixMonthsAgo } },
+      select: { createdAt: true },
+    });
+
+    recentProjects.forEach(p => {
+      const d = p.createdAt;
+      const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      if (trendData[key]) {
+        trendData[key].total += 1;
+      }
+    });
+
+    // 3. Status summary for KPIs
+    const stats = {
+      TOTAL: await prisma.project.count(),
+      DRAFT: 0,
+      OPEN: 0,
+      IN_PROGRESS: 0,
+      COMPLETED: 0,
+      CANCELLED: 0
+    };
+    statusDistribution.forEach(s => stats[s.status] = s._count.id);
+
+    return successResponse(res, "Project metrics retrieved", {
+      distribution: stats,
+      trend: Object.values(trendData),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/admin/projects
+ * List all projects with pagination and status filtering
+ */
+adminRouter.get("/projects", async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const status = req.query.status; // Optional filter
+    const skip = (page - 1) * limit;
+
+    const where = {};
+    if (status && status !== "ALL") {
+      if (status === "UPCOMING") {
+        where.status = { in: ["DRAFT", "OPEN"] };
+      } else {
+        where.status = status;
+      }
+    }
+
+    const [projects, total] = await Promise.all([
+      prisma.project.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          client: {
+            select: { id: true, name: true, email: true }
+          },
+          _count: {
+            select: { applications: true, contracts: true }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.project.count({ where }),
+    ]);
+
+    return successResponse(res, "Projects retrieved", {
+      projects,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/admin/projects/:projectId
+ * Fetch full project details for admin including all associations
+ */
+adminRouter.get("/projects/:projectId", async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        client: {
+          select: { id: true, name: true, email: true, profile: { select: { profilePicture: true } } }
+        },
+        applications: {
+          include: {
+            freelancer: {
+              select: { id: true, name: true, email: true }
+            }
+          },
+          orderBy: { createdAt: "desc" }
+        },
+        contracts: {
+          include: {
+            freelancer: {
+              select: { id: true, name: true, email: true }
+            }
+          },
+          orderBy: { createdAt: "desc" }
+        }
+      }
+    });
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: "Project not found" });
+    }
+
+    return successResponse(res, "Project details retrieved", { project });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default adminRouter;
