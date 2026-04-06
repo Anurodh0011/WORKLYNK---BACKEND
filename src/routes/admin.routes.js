@@ -443,4 +443,78 @@ adminRouter.get("/projects/:projectId", async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/v1/admin/users/:userId
+ * Detailed user profile and activity report
+ */
+adminRouter.get("/users/:userId", async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        profile: true,
+        reviewsReceived: {
+          include: {
+            reviewer: { select: { id: true, name: true, profile: { select: { profilePicture: true } } } }
+          },
+          orderBy: { createdAt: "desc" }
+        },
+        applications: {
+          include: { project: { select: { title: true, status: true, budgetMin: true, budgetMax: true } } },
+          orderBy: { createdAt: "desc" }
+        },
+        contractsAsFreelancer: {
+          include: { project: { select: { title: true, budgetMin: true, budgetMax: true } } },
+          orderBy: { createdAt: "desc" }
+        },
+        contractsAsClient: {
+          include: { project: { select: { title: true } } },
+          orderBy: { createdAt: "desc" }
+        },
+        projects: {
+          orderBy: { createdAt: "desc" }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Performance Calculations
+    const totalEarnings = user.contractsAsFreelancer
+      .filter(c => c.status === "COMPLETED" || c.status === "ACTIVE")
+      .reduce((sum, c) => sum + (c.paidAmount || 0), 0);
+
+    const averageRating = user.reviewsReceived.length > 0
+      ? user.reviewsReceived.reduce((sum, r) => sum + r.rating, 0) / user.reviewsReceived.length
+      : 0;
+
+    const totalApplications = user.applications.length;
+    const approvedContracts = user.contractsAsFreelancer.length;
+    const conversionRate = totalApplications > 0 
+      ? (approvedContracts / totalApplications) * 100 
+      : 0;
+
+    res.json({
+      success: true,
+      data: {
+        user,
+        metrics: {
+          totalEarnings,
+          averageRating,
+          totalApplications,
+          approvedContracts,
+          conversionRate: conversionRate.toFixed(1),
+          projectsCount: user.role === 'CLIENT' ? user.projects.length : user.contractsAsFreelancer.length
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default adminRouter;
