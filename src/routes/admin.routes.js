@@ -140,7 +140,6 @@ adminRouter.get("/users", async (req, res, next) => {
           name: true,
           email: true,
           role: true,
-          emailVerified: true,
           status: true,
           createdAt: true,
           lastLoginAt: true,
