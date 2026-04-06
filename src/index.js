@@ -25,10 +25,12 @@ import reviewRouter from "./routes/review.routes.js";
 const app = express();
 
 // ── Core Middleware ──────────────────────────────────────
-app.use(cors({
-  origin: env.clientUrl,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: env.clientUrl,
+    credentials: true,
+  }),
+);
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
@@ -73,7 +75,7 @@ const PORT = env.port;
 
 app.listen(PORT, async () => {
   console.log(`\n╔══════════════════════════════════════════╗`);
-  console.log(`║   🚀 Worklynk API Server                 ║`);
+  console.log(`║   ------Worklynk API Server-------                 ║`);
   console.log(`║   Port: ${PORT}                             ║`);
   console.log(`║   Mode: ${env.nodeEnv.padEnd(30)}║`);
   console.log(`╚══════════════════════════════════════════╝\n`);
