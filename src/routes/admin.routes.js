@@ -498,6 +498,18 @@ adminRouter.get("/users/:userId", async (req, res, next) => {
       ? (approvedContracts / totalApplications) * 100 
       : 0;
 
+    // Project Completion Rate (Completed / Total)
+    let completedProjects = 0;
+    let totalProjectRecords = 0;
+
+    if (user.role === 'CLIENT') {
+      completedProjects = user.projects.filter(p => p.status === 'COMPLETED').length;
+      totalProjectRecords = user.projects.length;
+    } else {
+      completedProjects = user.contractsAsFreelancer.filter(c => c.status === 'COMPLETED').length;
+      totalProjectRecords = user.contractsAsFreelancer.length;
+    }
+
     res.json({
       success: true,
       data: {
@@ -508,7 +520,9 @@ adminRouter.get("/users/:userId", async (req, res, next) => {
           totalApplications,
           approvedContracts,
           conversionRate: conversionRate.toFixed(1),
-          projectsCount: user.role === 'CLIENT' ? user.projects.length : user.contractsAsFreelancer.length
+          projectsCount: totalProjectRecords,
+          completedProjects,
+          completionRate: `${completedProjects}/${totalProjectRecords}`
         }
       }
     });
