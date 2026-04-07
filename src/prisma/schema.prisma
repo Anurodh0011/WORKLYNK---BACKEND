@@ -92,6 +92,7 @@ model User {
   lastLoginAt   DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  suspendedUntil DateTime? 
 
   sessions      Session[]
   profile       Profile?
@@ -109,8 +110,26 @@ model User {
   reviewsGiven        Review[] @relation("ReviewerReviews")
   reviewsReceived     Review[] @relation("RevieweeReviews")
 
+  // Status History
+  statusHistory       UserStatusHistory[] @relation("UserStatusHistory")
+
   @@map("users")
 }
+
+model UserStatusHistory {
+  id              String        @id @default(uuid())
+  userId          String
+  status          AccountStatus
+  remarks         String?
+  suspensionDuration Int?       // in days
+  changedById     String?       // ID of the admin who changed it
+  createdAt       DateTime      @default(now())
+
+  user            User          @relation("UserStatusHistory", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_status_history")
+}
+
 
 // ─── Pending User Model ──────────────────────────────────
 // Temporary storage for users who haven't verified their email yet
