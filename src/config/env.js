@@ -28,6 +28,9 @@ const env = {
   otpExpiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES) || 5,
   otpMaxAttempts: parseInt(process.env.OTP_MAX_ATTEMPTS) || 5,
 
+  // Backend URL (Self-reference if needed for emails/OAuth)
+  backendUrl: process.env.BACKEND_URL || "http://localhost:5001",
+
   // Client URL (for CORS)
   clientUrl: process.env.CLIENT_URL || "http://localhost:3001",
 };
