@@ -2,12 +2,13 @@
   "name": "worklynk",
   "version": "1.0.0",
   "description": "A Platform for connecting Nepali Clients to Freelancers.",
-  "main": "index.js",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsx src/index.js",
-    "dev": "nodemon --exec tsx src/index.js"
+    "dev": "nodemon --exec tsx src/index.js",
+    "build": "prisma generate --schema=src/prisma/schema.prisma"
   },
   "author": "Anurodh Prasain",
   "license": "ISC",
@@ -23,11 +24,11 @@
     "express-validator": "^7.3.1",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.2",
-    "pg": "^8.18.0"
+    "pg": "^8.18.0",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11",
-    "prisma": "^7.4.2",
-    "tsx": "^4.21.0"
+    "prisma": "^7.4.2"
   }
 }
