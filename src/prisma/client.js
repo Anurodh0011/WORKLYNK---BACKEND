@@ -4,7 +4,8 @@
 import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import env from "../config/env.js";
-import { PrismaClient } from "@prisma/client";
+import pkg_prisma from "@prisma/client";
+const { PrismaClient } = pkg_prisma;
 
 // Create a pg Pool for the adapter
 const pool = new pg.Pool({
