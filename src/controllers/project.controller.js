@@ -1,5 +1,6 @@
 import * as projectService from "../services/project.service.js";
 import { successResponse, errorResponse } from "../helpers/response.helper.js";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 /**
  * Create a new project or draft
@@ -11,11 +12,16 @@ export async function createProject(req, res, next) {
 
     // Handle attachments if any (from multer)
     if (req.files && req.files.length > 0) {
-      projectData.attachments = req.files.map(file => ({
-        name: file.originalname,
-        url: `/uploads/${file.filename}`, // Placeholder for actual upload logic
-        type: file.mimetype,
-      }));
+      projectData.attachments = await Promise.all(
+        req.files.map(async (file) => {
+          const result = await uploadToCloudinary(file.path, "worklynk/attachments");
+          return {
+            name: file.originalname,
+            url: result?.secure_url || `/uploads/${file.filename}`,
+            type: file.mimetype,
+          };
+        })
+      );
     }
 
     const project = await projectService.createProject(clientId, projectData);
@@ -42,11 +48,16 @@ export async function updateProject(req, res, next) {
 
     // Handle attachments if any (from multer)
     if (req.files && req.files.length > 0) {
-      const newAttachments = req.files.map(file => ({
-        name: file.originalname,
-        url: `/uploads/${file.filename}`,
-        type: file.mimetype,
-      }));
+      const newAttachments = await Promise.all(
+        req.files.map(async (file) => {
+          const result = await uploadToCloudinary(file.path, "worklynk/attachments");
+          return {
+            name: file.originalname,
+            url: result?.secure_url || `/uploads/${file.filename}`,
+            type: file.mimetype,
+          };
+        })
+      );
       
       // Fetch existing project to get current attachments
       const existingProject = await projectService.getProjectById(projectId);

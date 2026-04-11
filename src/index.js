@@ -24,6 +24,9 @@ import reviewRouter from "./routes/review.routes.js";
 
 const app = express();
 
+// Trust proxy for secure cookies on Render
+app.set("trust proxy", 1);
+
 // ── Core Middleware ──────────────────────────────────────
 app.use(
   cors({

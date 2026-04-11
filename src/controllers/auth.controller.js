@@ -52,11 +52,13 @@ export async function login(req, res, next) {
       userAgent,
     });
 
+    const isProd = env.nodeEnv === "production" || env.clientUrl.includes("vercel.app") || env.clientUrl.startsWith("https");
+
     // Set session token as HTTP-only cookie
     res.cookie("session_token", sessionToken, {
       httpOnly: true,
-      secure: env.nodeEnv === "production",
-      sameSite: "lax",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       maxAge: env.sessionMaxAge,
       path: "/",
     });
@@ -86,11 +88,13 @@ export async function logout(req, res, next) {
 
     await authService.logoutUser(sessionToken);
 
+    const isProd = env.nodeEnv === "production" || env.clientUrl.includes("vercel.app") || env.clientUrl.startsWith("https");
+
     // Clear the session cookie
     res.clearCookie("session_token", {
       httpOnly: true,
-      secure: env.nodeEnv === "production",
-      sameSite: "lax",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       path: "/",
     });
 
