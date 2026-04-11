@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "postinstall": "prisma generate --schema=src/prisma/schema.prisma",
+    "postinstall": "prisma generate --schema=src/prisma/schema.prisma && prisma db push --schema=src/prisma/schema.prisma",
     "start": "node src/index.js",
     "dev": "nodemon --exec tsx src/index.js",
     "build": "prisma generate --schema=src/prisma/schema.prisma && prisma db push --schema=src/prisma/schema.prisma"
