@@ -1,5 +1,6 @@
 import * as applicationService from "../services/application.service.js";
 import { validationResult } from "express-validator";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 export const apply = async (req, res) => {
   const errors = validationResult(req);
@@ -12,11 +13,16 @@ export const apply = async (req, res) => {
     const freelancerId = req.user.id;
     
     // Format attachments from multer
-    const attachments = req.files ? req.files.map(file => ({
-        name: file.originalname,
-        path: file.path,
-        type: file.mimetype
-    })) : [];
+    const attachments = req.files ? await Promise.all(
+      req.files.map(async (file) => {
+        const result = await uploadToCloudinary(file.path, "worklynk/attachments");
+        return {
+          name: file.originalname,
+          url: result?.secure_url || file.path,
+          type: file.mimetype
+        };
+      })
+    ) : [];
 
     const application = await applicationService.applyForProject(projectId, freelancerId, {
       ...req.body,

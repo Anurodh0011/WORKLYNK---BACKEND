@@ -1,6 +1,7 @@
 import * as profileService from "../services/profile.service.js";
 import { successResponse, errorResponse } from "../helpers/response.helper.js";
 import { logActivity } from "../helpers/activity.helper.js";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 // @route   GET /api/profile
 // @desc    Get current user profile
@@ -32,7 +33,8 @@ export const updateProfile = async (req, res, next) => {
   try {
     const updateData = { ...req.body };
     if (req.file) {
-      updateData.profilePicture = req.file.path;
+      const result = await uploadToCloudinary(req.file.path, "worklynk/profiles");
+      updateData.profilePicture = result?.secure_url || req.file.path;
     }
     const profile = await profileService.updateProfileInfo(req.user.id, updateData);
     return successResponse(res, "Profile updated successfully", { profile });
@@ -50,7 +52,8 @@ export const submitVerification = async (req, res, next) => {
     let { documentImage } = req.body;
 
     if (req.file) {
-      documentImage = req.file.path;
+      const result = await uploadToCloudinary(req.file.path, "worklynk/documents");
+      documentImage = result?.secure_url || req.file.path;
     }
 
     if (!panVatNumber || !documentType) {
