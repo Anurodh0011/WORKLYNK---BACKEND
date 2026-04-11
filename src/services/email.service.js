@@ -4,9 +4,12 @@
 import nodemailer from "nodemailer";
 import env from "../config/env.js";
 
-// Create reusable transporter
+// Create reusable transporter (force IPv4 for cloud hosting compatibility)
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  family: 4, // Force IPv4 — Render free tier doesn't support IPv6
   auth: {
     user: env.email.address,
     pass: env.email.appPassword,
