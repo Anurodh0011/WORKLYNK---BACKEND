@@ -6,6 +6,9 @@ import { authenticate } from "../middleware/authenticate.js";
 import { authorize, requireVerified } from "../middleware/authorize.js";
 import { successResponse } from "../helpers/response.helper.js";
 import prisma from "../prisma/client.js";
+import { logActivity } from "../helpers/activity.helper.js";
+
+import { hashPassword, comparePassword } from "../helpers/password.helper.js";
 
 const adminRouter = Router();
 
@@ -255,6 +258,18 @@ adminRouter.patch("/users/:userId/status", async (req, res, next) => {
       console.log("DEBUG: Cleaning up user sessions...");
       await prisma.session.deleteMany({ where: { userId } });
     }
+
+    // Log the change
+    await logActivity({
+      adminId: req.user.id,
+      event: `User Status Updated: ${status}`,
+      targetId: userId,
+      targetType: "USER",
+      details: { status, remarks, suspensionDuration },
+      deviceInfo: req.headers["user-agent"],
+      ipAddress: req.ip,
+      status: status === "ACTIVE" ? "SUCCESS" : "WARNING"
+    });
 
     return successResponse(res, `User status updated to ${status}`, { user });
   } catch (error) {
@@ -526,6 +541,140 @@ adminRouter.get("/users/:userId", async (req, res, next) => {
         }
       }
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/admin/settings
+ * Fetch all platform settings
+ */
+adminRouter.get("/settings", async (req, res, next) => {
+  try {
+    const settings = await prisma.platformSetting.findMany();
+    // Convert to object for easier frontend consumption
+    const settingsObj = settings.reduce((acc, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {});
+    
+    return successResponse(res, "Settings retrieved", settingsObj);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/v1/admin/settings
+ * Update platform settings
+ */
+adminRouter.post("/settings", async (req, res, next) => {
+  try {
+    const updates = req.body; // { key: value }
+    const adminId = req.user.id;
+
+    const results = await prisma.$transaction(
+      Object.entries(updates).map(([key, value]) => 
+        prisma.platformSetting.upsert({
+          where: { key },
+          update: { value: String(value) },
+          create: { key, value: String(value) }
+        })
+      )
+    );
+
+    // Log the change
+    await logActivity({
+      adminId,
+      event: "Platform Settings Updated",
+      details: updates,
+      deviceInfo: req.headers["user-agent"],
+      ipAddress: req.ip,
+      status: "SUCCESS"
+    });
+
+    return successResponse(res, "Settings updated successfully", results);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/admin/activity-logs
+ * Fetch administrative activity logs
+ */
+adminRouter.get("/activity-logs", async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [logs, total] = await Promise.all([
+      prisma.activityLog.findMany({
+        skip,
+        take: limit,
+        include: {
+          admin: { select: { id: true, name: true, email: true } }
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.activityLog.count(),
+    ]);
+
+    return successResponse(res, "Activity logs retrieved", {
+      logs,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PATCH /api/v1/admin/security
+ * Update admin email and password
+ */
+adminRouter.patch("/security", async (req, res, next) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+    const adminId = req.user.id;
+
+    // 1. Fetch admin
+    const admin = await prisma.user.findUnique({ where: { id: adminId } });
+    if (!admin) return res.status(404).json({ success: false, message: "Admin not found" });
+
+    // 2. Verify current password if changing email/password
+    const isPasswordMatch = await comparePassword(currentPassword, admin.password);
+    if (!isPasswordMatch) return res.status(401).json({ success: false, message: "Invalid current password" });
+
+    // 3. Prepare updates
+    const data = {};
+    if (email) data.email = email;
+    if (newPassword) data.password = await hashPassword(newPassword);
+
+    const updatedAdmin = await prisma.user.update({
+      where: { id: adminId },
+      data,
+      select: { id: true, name: true, email: true, role: true }
+    });
+
+    // 4. Log the change
+    await logActivity({
+      adminId,
+      event: "Admin Security Credentials Updated",
+      details: { emailChanged: !!email, passwordChanged: !!newPassword },
+      deviceInfo: req.headers["user-agent"],
+      ipAddress: req.ip,
+      status: "CRITICAL"
+    });
+
+    return successResponse(res, "Security credentials updated", { user: updatedAdmin });
   } catch (error) {
     next(error);
   }
