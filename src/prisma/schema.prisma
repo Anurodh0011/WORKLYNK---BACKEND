@@ -113,8 +113,42 @@ model User {
   // Status History
   statusHistory       UserStatusHistory[] @relation("UserStatusHistory")
 
+  // Activity Logs (Admin specific)
+  activityLogs        ActivityLog[] @relation("AdminActivityLogs")
+
   @@map("users")
 }
+
+model ActivityLog {
+  id              String   @id @default(uuid())
+  adminId         String
+  event           String
+  targetId        String?
+  targetType      String?
+  details         Json?
+  deviceInfo      String?
+  ipAddress       String?
+  location        String?
+  status          String   @default("INFO") // INFO, SUCCESS, WARNING, ALERT, CRITICAL
+  createdAt       DateTime @default(now())
+
+  admin           User     @relation("AdminActivityLogs", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model PlatformSetting {
+  id              String   @id @default(uuid())
+  key             String   @unique
+  value           String
+  description     String?
+  updatedAt       DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
 
 model UserStatusHistory {
   id              String        @id @default(uuid())

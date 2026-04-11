@@ -1,5 +1,6 @@
 import * as profileService from "../services/profile.service.js";
 import { successResponse, errorResponse } from "../helpers/response.helper.js";
+import { logActivity } from "../helpers/activity.helper.js";
 
 // @route   GET /api/profile
 // @desc    Get current user profile
@@ -92,6 +93,19 @@ export const verifyByAdmin = async (req, res, next) => {
     }
 
     const profile = await profileService.verifyProfileAdmin(profileId, status, rejectionReason);
+
+    // Log Activity
+    await logActivity({
+      adminId: req.user.id,
+      event: `VAT/PAN Verification: ${status}`,
+      targetId: profile.userId,
+      targetType: "USER",
+      details: { profileId, status, rejectionReason },
+      deviceInfo: req.headers["user-agent"],
+      ipAddress: req.ip,
+      status: status === "VERIFIED" ? "SUCCESS" : "WARNING"
+    });
+
     return successResponse(res, "Profile verification status updated", { profile });
   } catch (error) {
     next(error);
