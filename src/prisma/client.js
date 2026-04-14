@@ -3,13 +3,12 @@
 
 import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import env from "../config/env.js";
 import pkg_prisma from "@prisma/client";
 const { PrismaClient } = pkg_prisma;
 
 // Create a pg Pool for the adapter
 const pool = new pg.Pool({
-  connectionString: env.databaseUrl,
+  connectionString: process.env.DATABASE_URL,
 });
 
 // Create the Prisma adapter
@@ -18,7 +17,7 @@ const adapter = new PrismaPg(pool);
 // Initialize PrismaClient with the pg adapter
 const prisma = new PrismaClient({
   adapter,
-  log: env.isDev ? ["warn", "error"] : ["error"],
+  log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
 });
 
 // Graceful shutdown

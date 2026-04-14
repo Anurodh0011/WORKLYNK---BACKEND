@@ -3,7 +3,6 @@
 // Updated: Verification now creates the actual User record
 
 import prisma from "../prisma/client.js";
-import env from "../config/env.js";
 import { generateOtp, getOtpExpiry } from "../helpers/otp.helper.js";
 import { hashPassword, comparePassword } from "../helpers/password.helper.js";
 import { sendOtpEmail, sendWelcomeEmail } from "./email.service.js";
@@ -33,7 +32,8 @@ export async function verifyOtp(email, code) {
   }
 
   // 3. Check attempts
-  if (pending.attempts >= env.otpMaxAttempts) {
+  const maxAttempts = parseInt(process.env.OTP_MAX_ATTEMPTS) || 5;
+  if (pending.attempts >= maxAttempts) {
     await prisma.pendingUser.delete({ where: { id: pending.id } });
     throw Object.assign(new Error("Too many failed attempts. Please register again."), { statusCode: 429 });
   }
@@ -46,7 +46,8 @@ export async function verifyOtp(email, code) {
       where: { id: pending.id },
       data: { attempts: { increment: 1 } },
     });
-    const remaining = env.otpMaxAttempts - pending.attempts - 1;
+    const maxAttempts = parseInt(process.env.OTP_MAX_ATTEMPTS) || 5;
+    const remaining = maxAttempts - pending.attempts - 1;
     throw Object.assign(new Error(`Invalid OTP. ${remaining} attempts remaining.`), { statusCode: 400 });
   }
 
@@ -105,7 +106,7 @@ export async function resendOtp(email) {
     where: { id: pending.id },
     data: {
       otpCode: hashedOtp,
-      expiresAt: getOtpExpiry(env.otpExpiryMinutes),
+      expiresAt: getOtpExpiry(parseInt(process.env.OTP_EXPIRY_MINUTES) || 5),
       attempts: 0,
       createdAt: new Date(),
     }

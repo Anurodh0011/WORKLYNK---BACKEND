@@ -3,7 +3,6 @@
 
 import * as authService from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../helpers/response.helper.js";
-import env from "../config/env.js";
 
 /**
  * POST /api/v1/auth/register
@@ -52,14 +51,15 @@ export async function login(req, res, next) {
       userAgent,
     });
 
-    const isProd = env.nodeEnv === "production" || env.clientUrl.includes("vercel.app") || env.clientUrl.startsWith("https");
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+    const isProd = process.env.NODE_ENV === "production" || clientUrl.includes("vercel.app") || clientUrl.startsWith("https");
 
     // Set session token as HTTP-only cookie
     res.cookie("session_token", sessionToken, {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? "none" : "lax",
-      maxAge: env.sessionMaxAge,
+      maxAge: parseInt(process.env.SESSION_MAX_AGE) || 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
 

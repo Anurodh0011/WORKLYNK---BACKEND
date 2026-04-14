@@ -2,7 +2,6 @@
 // Nodemailer SMTP transport using Gmail App Password
 
 import nodemailer from "nodemailer";
-import env from "../config/env.js";
 
 // Create reusable transporter (force IPv4 for cloud hosting compatibility)
 const transporter = nodemailer.createTransport({
@@ -11,8 +10,8 @@ const transporter = nodemailer.createTransport({
   secure: false,
   family: 4, // Force IPv4 — Render free tier doesn't support IPv6
   auth: {
-    user: env.email.address,
-    pass: env.email.appPassword,
+    user: process.env.EMAIL_ADDRESS,
+    pass: process.env.EMAIL_APP_PASSWORD,
   },
 });
 
@@ -21,7 +20,7 @@ const transporter = nodemailer.createTransport({
  */
 export async function verifyEmailConnection() {
   try {
-    if (!env.email.address || !env.email.appPassword) {
+    if (!process.env.EMAIL_ADDRESS || !process.env.EMAIL_APP_PASSWORD) {
       console.warn(
         "Email credentials not configured — OTP emails will not be sent",
       );
@@ -44,7 +43,7 @@ export async function verifyEmailConnection() {
  */
 export async function sendOtpEmail(to, otpCode, userName = "User") {
   const mailOptions = {
-    from: env.email.from || `Worklynk <${env.email.address}>`,
+    from: process.env.EMAIL_FROM || `Worklynk <${process.env.EMAIL_ADDRESS}>`,
     to,
     subject: "Worklynk — Email Verification OTP",
     html: `
@@ -57,7 +56,7 @@ export async function sendOtpEmail(to, otpCode, userName = "User") {
           ${otpCode}
         </div>
         <p style="color: #64748b; font-size: 13px;">
-          This code expires in <strong>${env.otpExpiryMinutes} minutes</strong>. Do not share it with anyone.
+          This code expires in <strong>${process.env.OTP_EXPIRY_MINUTES || 5} minutes</strong>. Do not share it with anyone.
         </p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
         <p style="color: #94a3b8; font-size: 12px; text-align: center;">
@@ -69,7 +68,7 @@ export async function sendOtpEmail(to, otpCode, userName = "User") {
 
   try {
     // Only logged in development/test environments
-    if (env.nodeEnv === "development") {
+    if (process.env.NODE_ENV === "development") {
       console.log(`\n📧 [DEVELOPMENT] OTP for ${to}: ${otpCode}\n`);
     }
 
@@ -80,7 +79,7 @@ export async function sendOtpEmail(to, otpCode, userName = "User") {
     console.error("Failed to send OTP email:", error.message);
 
     // If in dev, we allow it to proceed so developers can test the verification flow via console logs
-    if (env.nodeEnv === "development") {
+    if (process.env.NODE_ENV === "development") {
       console.warn(
         "Email delivery failed, but proceeding in dev mode since OTP was logged above.",
       );
@@ -100,7 +99,7 @@ export async function sendOtpEmail(to, otpCode, userName = "User") {
  */
 export async function sendWelcomeEmail(to, userName = "User") {
   const mailOptions = {
-    from: env.email.from || `Worklynk <${env.email.address}>`,
+    from: process.env.EMAIL_FROM || `Worklynk <${process.env.EMAIL_ADDRESS}>`,
     to,
     subject: "Welcome to Worklynk! 🎉",
     html: `
@@ -137,7 +136,7 @@ export async function sendWelcomeEmail(to, userName = "User") {
  */
 export async function sendPasswordResetEmail(to, otpCode, userName = "User") {
   const mailOptions = {
-    from: env.email.from || `Worklynk <${env.email.address}>`,
+    from: process.env.EMAIL_FROM || `Worklynk <${process.env.EMAIL_ADDRESS}>`,
     to,
     subject: "Worklynk — Password Reset OTP",
     html: `
@@ -161,14 +160,14 @@ export async function sendPasswordResetEmail(to, otpCode, userName = "User") {
   };
 
   try {
-    if (env.nodeEnv === "development") {
+    if (process.env.NODE_ENV === "development") {
       console.log(`\n📧 [DEVELOPMENT] Reset Code for ${to}: ${otpCode}\n`);
     }
     await transporter.sendMail(mailOptions);
     console.log(`📧 Reset email sent to ${to}`);
   } catch (error) {
     console.error("Failed to send reset email:", error.message);
-    if (env.nodeEnv === "development") {
+    if (process.env.NODE_ENV === "development") {
       return { success: true };
     }
     throw new Error("Failed to send reset email.");
