@@ -2,9 +2,9 @@
 // Express 5 + Prisma + PostgreSQL with session-based auth
 
 import express from "express";
+import "dotenv/config";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import env from "./config/env.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { verifyEmailConnection } from "./services/email.service.js";
 import { cleanExpiredSessions } from "./services/auth.service.js";
@@ -30,7 +30,7 @@ app.set("trust proxy", 1);
 // ── Core Middleware ──────────────────────────────────────
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
     credentials: true,
   }),
 );
@@ -74,14 +74,16 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ── Start Server ─────────────────────────────────────────
-const PORT = env.port;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, async () => {
-  console.log(`\n╔══════════════════════════════════════════╗`);
-  console.log(`║   ------Worklynk API Server-------                 ║`);
   console.log(`║   Port: ${PORT}                             ║`);
-  console.log(`║   Mode: ${env.nodeEnv.padEnd(30)}║`);
-  console.log(`╚══════════════════════════════════════════╝\n`);
+  console.log(
+    `║   Mode: ${(process.env.NODE_ENV || "development").padEnd(30)}║`,
+  );
+  console.log(
+    `║   Database: ${process.env.DATABASE_URL || "Not Set".padEnd(30)}║`,
+  );
 
   // Verify email service connection
   await verifyEmailConnection();

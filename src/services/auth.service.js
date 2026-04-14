@@ -4,7 +4,6 @@
 
 import crypto from "crypto";
 import prisma from "../prisma/client.js";
-import env from "../config/env.js";
 import { hashPassword, comparePassword } from "../helpers/password.helper.js";
 import { generateOtp, getOtpExpiry } from "../helpers/otp.helper.js";
 import {
@@ -67,8 +66,7 @@ export async function registerUser({
       role: normalizedRole,
       phoneNumber,
       otpCode: hashedOtp,
-      expiresAt: getOtpExpiry(env.otpExpiryMinutes),
-      attempts: 0,
+      expiresAt: getOtpExpiry(parseInt(process.env.OTP_EXPIRY_MINUTES) || 15),
     },
     create: {
       name,
@@ -77,7 +75,7 @@ export async function registerUser({
       role: normalizedRole,
       phoneNumber,
       otpCode: hashedOtp,
-      expiresAt: getOtpExpiry(env.otpExpiryMinutes),
+      expiresAt: getOtpExpiry(parseInt(process.env.OTP_EXPIRY_MINUTES) || 15),
     },
   });
 
@@ -152,7 +150,7 @@ export async function loginUser({ email, password, ipAddress, userAgent }) {
       token: sessionToken,
       ipAddress: ipAddress || null,
       userAgent: userAgent || null,
-      expiresAt: new Date(Date.now() + env.sessionMaxAge),
+      expiresAt: new Date(Date.now() + (parseInt(process.env.SESSION_MAX_AGE) || 7 * 24 * 60 * 60 * 1000)),
     },
   });
 
