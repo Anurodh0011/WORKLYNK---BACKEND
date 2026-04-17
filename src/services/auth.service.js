@@ -164,7 +164,7 @@ export async function loginUser({ email, password, ipAddress, userAgent }) {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      role: user.role.toLowerCase(),
       status: user.status,
       phoneNumber: user.phoneNumber,
       profile: user.profile ? {
@@ -213,6 +213,10 @@ export async function validateSession(sessionToken) {
   if (!session || new Date() > session.expiresAt) {
     if (session) await prisma.session.delete({ where: { id: session.id } });
     return null;
+  }
+
+  if (session.user && session.user.role) {
+    session.user.role = session.user.role.toLowerCase();
   }
   return session.user;
 }
