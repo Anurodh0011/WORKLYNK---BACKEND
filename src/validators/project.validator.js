@@ -52,6 +52,12 @@ export const createProjectRules = [
     .isIn(["ENTRY", "INTERMEDIATE", "EXPERT"])
     .withMessage("Invalid experience level"),
 
+  body("duration")
+    .if(body("status").equals("OPEN"))
+    .optional({ checkFalsy: true })
+    .isString()
+    .withMessage("Duration must be a string"),
+
   body("status")
     .optional()
     .isIn(["DRAFT", "OPEN"])

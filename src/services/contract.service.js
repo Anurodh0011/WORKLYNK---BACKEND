@@ -324,3 +324,44 @@ export const completeContract = async (contractId, freelancerId) => {
     return updatedContract;
   });
 };
+
+/**
+ * Either party closes an active contract (manual close with confirmation)
+ */
+export const closeContract = async (contractId, userId) => {
+  return await prisma.$transaction(async (tx) => {
+    const contract = await tx.contract.findUnique({
+      where: { id: contractId }
+    });
+
+    if (!contract) {
+      const error = new Error("Contract not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (contract.clientId !== userId && contract.freelancerId !== userId) {
+      const error = new Error("Unauthorized to close this contract");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    if (contract.status !== "ACTIVE") {
+      const error = new Error("Only active contracts can be closed");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const updatedContract = await tx.contract.update({
+      where: { id: contractId },
+      data: { status: "COMPLETED", endDate: new Date() }
+    });
+
+    await tx.project.update({
+      where: { id: contract.projectId },
+      data: { status: "COMPLETED" }
+    });
+
+    return updatedContract;
+  });
+};
