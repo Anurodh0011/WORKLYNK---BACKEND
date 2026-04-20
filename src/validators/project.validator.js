@@ -1,14 +1,5 @@
 import { body, param, query } from "express-validator";
 
-const noScript = (value) => {
-  if (typeof value === 'string') {
-    if (/<script\b[^>]*>|javascript:|on\w+=/i.test(value)) {
-      throw new Error("Scripts or malicious code are not allowed");
-    }
-  }
-  return true;
-};
-
 export const createProjectRules = [
   body("title")
     .if(body("status").equals("OPEN"))
@@ -16,8 +7,7 @@ export const createProjectRules = [
     .notEmpty()
     .withMessage("Title is required")
     .isLength({ min: 5, max: 200 })
-    .withMessage("Title must be between 5 and 200 characters")
-    .custom(noScript),
+    .withMessage("Title must be between 5 and 200 characters"),
 
   body("description")
     .if(body("status").equals("OPEN"))
@@ -25,15 +15,13 @@ export const createProjectRules = [
     .notEmpty()
     .withMessage("Description is required")
     .isLength({ min: 20 })
-    .withMessage("Description must be at least 20 characters long")
-    .custom(noScript),
+    .withMessage("Description must be at least 20 characters long"),
 
   body("category")
     .if(body("status").equals("OPEN"))
     .trim()
     .notEmpty()
-    .withMessage("Category is required")
-    .custom(noScript),
+    .withMessage("Category is required"),
 
   body("budgetType")
     .if(body("status").equals("OPEN"))
@@ -58,10 +46,6 @@ export const createProjectRules = [
     .isArray({ min: 1 })
     .withMessage("At least one skill is required"),
 
-  body("skillsRequired.*")
-    .optional()
-    .custom(noScript),
-
   body("experienceLevel")
     .if(body("status").equals("OPEN"))
     .optional()
@@ -83,10 +67,6 @@ export const createProjectRules = [
     .optional()
     .isArray()
     .withMessage("Checklist must be an array of strings"),
-
-  body("checklist.*")
-    .optional()
-    .custom(noScript),
 ];
 
 export const updateProjectRules = [
@@ -99,3 +79,4 @@ export const getProjectsRules = [
   query("status").optional().isIn(["OPEN", "COMPLETED", "CANCELLED"]),
   query("search").optional().trim(),
 ];
+
