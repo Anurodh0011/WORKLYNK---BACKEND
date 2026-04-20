@@ -79,3 +79,4 @@ export const getProjectsRules = [
   query("status").optional().isIn(["OPEN", "COMPLETED", "CANCELLED"]),
   query("search").optional().trim(),
 ];
+
