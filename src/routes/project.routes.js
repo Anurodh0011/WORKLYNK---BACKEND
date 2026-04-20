@@ -9,6 +9,9 @@ import {
   updateProjectRules, 
   getProjectsRules 
 } from "../validators/project.validator.js";
+import { 
+  createProject, updateProject, getProjects, getProjectById, getMyProjects, closeProject, reopenProject 
+} from "../controllers/project.controller.js";
 
 const router = Router();
 
@@ -67,6 +70,26 @@ router.patch(
   updateProjectRules,
   validate,
   projectController.updateProject
+);
+
+/**
+ * Client: Close a project
+ */
+router.post(
+  "/:id/close",
+  authenticate,
+  authorize("CLIENT"),
+  closeProject
+);
+
+/**
+ * Client: Reopen a project
+ */
+router.post(
+  "/:id/reopen",
+  authenticate,
+  authorize("CLIENT"),
+  reopenProject
 );
 
 export default router;

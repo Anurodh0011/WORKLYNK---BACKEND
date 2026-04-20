@@ -229,3 +229,156 @@ export async function getClientProjects(clientId) {
     }
   });
 }
+
+/**
+ * Close (cancel) a project - Client only
+ */
+export async function closeProject(projectId, clientId) {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: { contracts: { where: { status: "ACTIVE" } } }
+  });
+
+  if (!project) {
+    const error = new Error("Project not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (project.clientId !== clientId) {
+    const error = new Error("Unauthorized to close this project");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (["COMPLETED", "CANCELLED"].includes(project.status)) {
+    const error = new Error("Project is already closed or completed");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    // Reject all pending applications
+    await tx.application.updateMany({
+      where: { projectId, status: "PENDING" },
+      data: { status: "REJECTED" }
+    });
+
+    // Update project status to CANCELLED
+    return await tx.project.update({
+      where: { id: projectId },
+      data: { status: "CANCELLED" }
+    });
+  });
+}
+
+/**
+ * Reopen a cancelled project - Client only
+ */
+export async function reopenProject(projectId, clientId) {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId }
+  });
+
+  if (!project) {
+    const error = new Error("Project not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (project.clientId !== clientId) {
+    const error = new Error("Unauthorized to reopen this project");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (project.status !== "CANCELLED") {
+    const error = new Error("Only cancelled projects can be reopened");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return await prisma.project.update({
+    where: { id: projectId },
+    data: { status: "OPEN" }
+  });
+}
+
+/**
+ * Get project by ID with full client stats
+ */
+export async function getProjectByIdWithClientStats(projectId, userId = null) {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: {
+      client: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          profile: {
+            select: {
+              description: true,
+              profilePicture: true,
+            }
+          },
+          contractsAsClient: {
+            where: { status: { in: ["ACTIVE", "COMPLETED"] } },
+            select: { id: true }
+          },
+          reviewsReceived: {
+            select: { rating: true }
+          }
+        }
+      },
+      _count: {
+        select: { applications: true }
+      }
+    }
+  });
+
+  if (!project) return null;
+
+  // Calculate client stats
+  const clientReviews = project.client.reviewsReceived || [];
+  const clientAvgRating = clientReviews.length > 0
+    ? Number((clientReviews.reduce((a, r) => a + r.rating, 0) / clientReviews.length).toFixed(1))
+    : 0;
+  const clientProjectCount = project.client.contractsAsClient?.length || 0;
+
+  let myApplication = null;
+  let isBookmarked = false;
+
+  if (userId) {
+    myApplication = await prisma.application.findFirst({
+      where: { projectId, freelancerId: userId },
+      select: {
+        id: true,
+        status: true,
+        bidAmount: true,
+        proposal: true,
+        estimatedDuration: true,
+        attachments: true,
+        createdAt: true
+      }
+    });
+
+    const bookmark = await prisma.savedProject.findUnique({
+      where: { userId_projectId: { userId, projectId } }
+    });
+    isBookmarked = !!bookmark;
+  }
+
+  return {
+    ...project,
+    client: {
+      ...project.client,
+      projectCount: clientProjectCount,
+      averageRating: clientAvgRating,
+      reviewsReceived: undefined,
+      contractsAsClient: undefined,
+    },
+    myApplication,
+    isBookmarked
+  };
+}

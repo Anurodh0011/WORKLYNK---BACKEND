@@ -52,4 +52,11 @@ router.post(
   reviewController.completeContractTrigger
 );
 
+// CLIENT or FREELANCER closes the active contract early
+router.post(
+  "/:id/close",
+  authenticate,
+  contractController.closeContract
+);
+
 export default router;

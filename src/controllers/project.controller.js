@@ -96,7 +96,7 @@ export async function getProjects(req, res, next) {
 export async function getProjectById(req, res, next) {
   try {
     const { id: projectId } = req.params;
-    const project = await projectService.getProjectById(projectId, req.user?.id);
+    const project = await projectService.getProjectByIdWithClientStats(projectId, req.user?.id);
 
     if (!project) {
       return errorResponse(res, "Project not found", null, 404);
@@ -117,6 +117,40 @@ export async function getMyProjects(req, res, next) {
     const projects = await projectService.getClientProjects(clientId);
     return successResponse(res, "My projects retrieved successfully", projects);
   } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Client: Close (cancel) a project
+ */
+export async function closeProject(req, res, next) {
+  try {
+    const { id: projectId } = req.params;
+    const { id: clientId } = req.user;
+    const project = await projectService.closeProject(projectId, clientId);
+    return successResponse(res, "Project closed successfully", project);
+  } catch (error) {
+    if (error.statusCode) {
+      return errorResponse(res, error.message, null, error.statusCode);
+    }
+    next(error);
+  }
+}
+
+/**
+ * Client: Reopen a cancelled project
+ */
+export async function reopenProject(req, res, next) {
+  try {
+    const { id: projectId } = req.params;
+    const { id: clientId } = req.user;
+    const project = await projectService.reopenProject(projectId, clientId);
+    return successResponse(res, "Project reopened successfully", project);
+  } catch (error) {
+    if (error.statusCode) {
+      return errorResponse(res, error.message, null, error.statusCode);
+    }
     next(error);
   }
 }

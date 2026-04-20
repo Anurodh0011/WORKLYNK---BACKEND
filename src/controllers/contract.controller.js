@@ -133,3 +133,23 @@ export const completeContract = async (req, res) => {
     res.status(error.statusCode || 400).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * Close an active contract (either party)
+ */
+export const closeContract = async (req, res) => {
+  try {
+    const contractId = req.params.id;
+    const userId = req.user.id;
+
+    const contract = await contractService.closeContract(contractId, userId);
+
+    res.status(200).json({
+      success: true,
+      message: "Contract closed successfully",
+      data: contract,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+};
