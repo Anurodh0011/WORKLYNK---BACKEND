@@ -96,15 +96,20 @@ export async function updateProject(projectId, clientId, updateData) {
  * Get projects with filters
  */
 export async function getProjects(filters = {}) {
-  const { category, status = "OPEN", search, skills } = filters;
+  const { category, status = "OPEN", search, skills, budgetType, experienceLevel, minBudget, maxBudget } = filters;
 
   const where = {
     status,
     ...(category && { category }),
+    ...(budgetType && { budgetType }),
+    ...(experienceLevel && { experienceLevel }),
+    ...(minBudget && { budgetMin: { gte: parseFloat(minBudget) } }),
+    ...(maxBudget && { budgetMax: { lte: parseFloat(maxBudget) } }),
     ...(search && {
       OR: [
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
+        { skillsRequired: { hasSome: [search] } } // search in skills too
       ]
     }),
     ...(skills && skills.length > 0 && {
