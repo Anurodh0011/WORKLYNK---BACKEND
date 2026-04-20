@@ -60,6 +60,7 @@ enum ApplicationStatus {
   SHORTLISTED
   REJECTED
   ACCEPTED
+  WITHDRAWN
 }
 
 enum ContractStatus {

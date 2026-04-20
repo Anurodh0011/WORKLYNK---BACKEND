@@ -279,6 +279,21 @@ export const submitMilestone = async (milestoneId, contractId, data, userId) => 
     throw new Error("Unauthorized");
   }
 
+  const milestone = await prisma.milestone.findUnique({
+    where: { id: milestoneId },
+    include: { _count: { select: { tasks: true, boardColumns: true } } }
+  });
+
+  if (!milestone) {
+    throw new Error("Milestone not found");
+  }
+
+  if (milestone._count.tasks === 0 && milestone._count.boardColumns === 0) {
+    const error = new Error("Cannot submit an empty milestone. Please add at least one task or list first.");
+    error.statusCode = 400;
+    throw error;
+  }
+
   return await prisma.milestone.update({
     where: { id: milestoneId, contractId },
     data: {
