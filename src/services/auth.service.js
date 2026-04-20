@@ -371,3 +371,15 @@ export async function resetPassword(email, newPassword) {
 
   return { message: "Password reset successful" };
 }
+
+/**
+ * Get public platform settings
+ */
+export async function getPlatformSettings() {
+  const settings = await prisma.platformSetting.findMany();
+  return settings.reduce((acc, curr) => {
+    acc[curr.key] = curr.value;
+    return acc;
+  }, {});
+}
+
