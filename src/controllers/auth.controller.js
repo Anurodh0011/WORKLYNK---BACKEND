@@ -166,3 +166,17 @@ export async function resetPassword(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * GET /api/v1/auth/settings
+ * Get public platform settings (Maintenance mode check)
+ */
+export async function getPlatformSettings(req, res, next) {
+  try {
+    const settings = await authService.getPlatformSettings();
+    return successResponse(res, "Settings retrieved", settings);
+  } catch (error) {
+    next(error);
+  }
+}
+

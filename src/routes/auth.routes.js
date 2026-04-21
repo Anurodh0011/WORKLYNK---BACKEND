@@ -27,4 +27,8 @@ router.post("/otp/resend", resendOtpValidator, validate, otpController.resendOtp
 router.get("/me", authenticate, authController.getCurrentUser);
 router.post("/logout", authenticate, authController.logout);
 
+// Public settings
+router.get("/settings", authController.getPlatformSettings);
+
 export default router;
+

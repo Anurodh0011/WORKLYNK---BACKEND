@@ -218,6 +218,13 @@ adminRouter.patch("/users/:userId/status", async (req, res, next) => {
       });
     }
 
+    if (userExists.role === "ADMIN" && (status === "SUSPENDED" || status === "DEACTIVATED")) {
+      return res.status(403).json({
+        success: false,
+        message: "Administrative accounts cannot be suspended or deactivated.",
+      });
+    }
+
     console.log("DEBUG: Starting transaction...");
     const user = await prisma.$transaction(async (tx) => {
       console.log("DEBUG: Inside transaction block, updating user status...");

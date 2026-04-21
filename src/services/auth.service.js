@@ -150,7 +150,10 @@ export async function loginUser({ email, password, ipAddress, userAgent }) {
       token: sessionToken,
       ipAddress: ipAddress || null,
       userAgent: userAgent || null,
-      expiresAt: new Date(Date.now() + (parseInt(process.env.SESSION_MAX_AGE) || 7 * 24 * 60 * 60 * 1000)),
+      expiresAt: new Date(
+        Date.now() +
+          (parseInt(process.env.SESSION_MAX_AGE) || 7 * 24 * 60 * 60 * 1000),
+      ),
     },
   });
 
@@ -164,12 +167,14 @@ export async function loginUser({ email, password, ipAddress, userAgent }) {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role.toLowerCase(),
+      role: user.role,
       status: user.status,
       phoneNumber: user.phoneNumber,
-      profile: user.profile ? {
-        verificationStatus: user.profile.verificationStatus
-      } : null
+      profile: user.profile
+        ? {
+            verificationStatus: user.profile.verificationStatus,
+          }
+        : null,
     },
     sessionToken,
     expiresAt: session.expiresAt,
@@ -202,9 +207,9 @@ export async function validateSession(sessionToken) {
           phoneNumber: true,
           profile: {
             select: {
-              verificationStatus: true
-            }
-          }
+              verificationStatus: true,
+            },
+          },
         },
       },
     },
@@ -216,7 +221,7 @@ export async function validateSession(sessionToken) {
   }
 
   if (session.user && session.user.role) {
-    session.user.role = session.user.role.toLowerCase();
+    session.user.role = session.user.role;
   }
   return session.user;
 }
@@ -234,9 +239,9 @@ export async function getUserById(userId) {
       lastLoginAt: true,
       profile: {
         select: {
-          verificationStatus: true
-        }
-      }
+          verificationStatus: true,
+        },
+      },
     },
   });
 }
@@ -366,3 +371,15 @@ export async function resetPassword(email, newPassword) {
 
   return { message: "Password reset successful" };
 }
+
+/**
+ * Get public platform settings
+ */
+export async function getPlatformSettings() {
+  const settings = await prisma.platformSetting.findMany();
+  return settings.reduce((acc, curr) => {
+    acc[curr.key] = curr.value;
+    return acc;
+  }, {});
+}
+

@@ -100,11 +100,15 @@ export const updateProfileInfo = async (userId, data) => {
   // Clean undefined keys so we don't overwrite with undefined
   Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
-  // Update User table if phoneNumber is provided
-  if (data.phoneNumber !== undefined) {
+  // Update User table if phoneNumber or name is provided
+  if (data.phoneNumber !== undefined || data.name !== undefined) {
+    const userUpdate = {};
+    if (data.phoneNumber !== undefined) userUpdate.phoneNumber = data.phoneNumber;
+    if (data.name !== undefined) userUpdate.name = data.name;
+
     await prisma.user.update({
       where: { id: userId },
-      data: { phoneNumber: data.phoneNumber },
+      data: userUpdate,
     });
   }
 
