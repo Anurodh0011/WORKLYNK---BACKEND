@@ -4,13 +4,25 @@ import prisma from "../prisma/client.js";
  * Get all verified freelancers with optional skill filters
  */
 export async function getFreelancers(filters = {}) {
-  const { skills, search } = filters;
+  const { skills, search, minHourlyRate, maxHourlyRate, category } = filters;
 
   const where = {
     role: "FREELANCER",
     profile: {
       ...(skills && skills.length > 0 && {
         skills: { hasSome: skills }
+      }),
+      ...((minHourlyRate || maxHourlyRate) && {
+        hourlyRate: {
+          ...(minHourlyRate && { gte: parseFloat(minHourlyRate) }),
+          ...(maxHourlyRate && { lte: parseFloat(maxHourlyRate) }),
+        }
+      }),
+      ...(category && {
+        OR: [
+          { headline: { contains: category, mode: 'insensitive' } },
+          { skills: { has: category } }
+        ]
       }),
       ...(search && {
         OR: [
